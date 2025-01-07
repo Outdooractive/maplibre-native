@@ -10,13 +10,11 @@
       
       
       
-        <link rel="canonical" href="https://www.maplibre.org/maplibre-native/android/examples/camera/animation-types/">
+        <link rel="canonical" href="https://www.maplibre.org/maplibre-native/android/examples/styling/live-realtime-data/">
       
       
-        <link rel="prev" href="../../annotations/marker-annotations/">
+        <link rel="prev" href="../draggable-marker/">
       
-      
-        <link rel="next" href="../animator-animation/">
       
       
       <link rel="icon" href="https://maplibre.org/favicon.ico">
@@ -24,7 +22,7 @@
     
     
       
-        <title>Animation Types - MapLibre Android Examples</title>
+        <title>Add live realtime data - MapLibre Android Examples</title>
       
     
     
@@ -61,11 +59,11 @@
       
         <meta  property="og:type"  content="website" >
       
-        <meta  property="og:title"  content="Animation Types - MapLibre Android Examples" >
+        <meta  property="og:title"  content="Add live realtime data - MapLibre Android Examples" >
       
         <meta  property="og:description"  content="MapLibre Android Examples" >
       
-        <meta  property="og:image"  content="https://www.maplibre.org/maplibre-native/android/examples/assets/images/social/camera/animation-types.png" >
+        <meta  property="og:image"  content="https://www.maplibre.org/maplibre-native/android/examples/assets/images/social/styling/live-realtime-data.png" >
       
         <meta  property="og:image:type"  content="image/png" >
       
@@ -73,15 +71,15 @@
       
         <meta  property="og:image:height"  content="630" >
       
-        <meta  property="og:url"  content="https://www.maplibre.org/maplibre-native/android/examples/camera/animation-types/" >
+        <meta  property="og:url"  content="https://www.maplibre.org/maplibre-native/android/examples/styling/live-realtime-data/" >
       
         <meta  name="twitter:card"  content="summary_large_image" >
       
-        <meta  name="twitter:title"  content="Animation Types - MapLibre Android Examples" >
+        <meta  name="twitter:title"  content="Add live realtime data - MapLibre Android Examples" >
       
         <meta  name="twitter:description"  content="MapLibre Android Examples" >
       
-        <meta  name="twitter:image"  content="https://www.maplibre.org/maplibre-native/android/examples/assets/images/social/camera/animation-types.png" >
+        <meta  name="twitter:image"  content="https://www.maplibre.org/maplibre-native/android/examples/assets/images/social/styling/live-realtime-data.png" >
       
     
     
@@ -104,7 +102,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#animation-types" class="md-skip">
+        <a href="#add-live-realtime-data" class="md-skip">
           Skip to content
         </a>
       
@@ -139,7 +137,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Animation Types
+              Add live realtime data
             
           </span>
         </div>
@@ -501,8 +499,6 @@
       
   
   
-    
-  
   
   
     
@@ -514,11 +510,11 @@
       
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" >
         
           
           <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="">
@@ -532,7 +528,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_8">
             <span class="md-nav__icon md-icon"></span>
             Camera
@@ -543,30 +539,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  <span class="md-ellipsis">
-    Animation Types
-  </span>
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../../camera/animation-types/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -575,62 +551,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#move" class="md-nav__link">
-    <span class="md-ellipsis">
-      Move
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#ease" class="md-nav__link">
-    <span class="md-ellipsis">
-      Ease
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#animate" class="md-nav__link">
-    <span class="md-ellipsis">
-      Animate
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#animation-callbacks" class="md-nav__link">
-    <span class="md-ellipsis">
-      Animation Callbacks
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -643,7 +563,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../animator-animation/" class="md-nav__link">
+      <a href="../../camera/animator-animation/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -664,7 +584,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../cameraposition/" class="md-nav__link">
+      <a href="../../camera/cameraposition/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -685,7 +605,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../gesture-detector/" class="md-nav__link">
+      <a href="../../camera/gesture-detector/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -706,7 +626,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../lat-lng-bounds/" class="md-nav__link">
+      <a href="../../camera/lat-lng-bounds/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -727,7 +647,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../max-min-zoom/" class="md-nav__link">
+      <a href="../../camera/max-min-zoom/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -748,7 +668,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../move-map-pixels/" class="md-nav__link">
+      <a href="../../camera/move-map-pixels/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -769,7 +689,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../zoom-methods/" class="md-nav__link">
+      <a href="../../camera/zoom-methods/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -794,8 +714,10 @@
       
   
   
+    
   
   
+  
     
     
     
@@ -805,11 +727,11 @@
       
     
     
-    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_9" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_9" checked>
         
           
           <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="">
@@ -823,7 +745,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_9">
             <span class="md-nav__icon md-icon"></span>
             Styling
@@ -837,7 +759,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../styling/animated-image-source/" class="md-nav__link">
+      <a href="../animated-image-source/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -858,7 +780,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../styling/animated-symbol-layer/" class="md-nav__link">
+      <a href="../animated-symbol-layer/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -879,7 +801,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../styling/building-layer/" class="md-nav__link">
+      <a href="../building-layer/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -900,7 +822,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../styling/circle-layer/" class="md-nav__link">
+      <a href="../circle-layer/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -921,7 +843,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../styling/custom-sprite/" class="md-nav__link">
+      <a href="../custom-sprite/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -942,7 +864,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../styling/data-driven-style/" class="md-nav__link">
+      <a href="../data-driven-style/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -963,7 +885,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../styling/distance-expression/" class="md-nav__link">
+      <a href="../distance-expression/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -984,7 +906,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../styling/draggable-marker/" class="md-nav__link">
+      <a href="../draggable-marker/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1002,10 +924,30 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../../styling/live-realtime-data/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    Add live realtime data
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   <span class="md-ellipsis">
@@ -1014,6 +956,35 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#bonus-set-icon-rotation" class="md-nav__link">
+    <span class="md-ellipsis">
+      Bonus: set icon rotation
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -1041,7 +1012,7 @@
                   
 
   
-    <a href="https://github.com/maplibre/maplibre-native/edit/main/platform/android/docs/camera/animation-types.md" title="Edit this page" class="md-content__button md-icon">
+    <a href="https://github.com/maplibre/maplibre-native/edit/main/platform/android/docs/styling/live-realtime-data.md" title="Edit this page" class="md-content__button md-icon">
       
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
     </a>
@@ -1049,101 +1020,69 @@
   
 
 
-<h1 id="animation-types">Animation Types</h1>
+<h1 id="add-live-realtime-data">Add live realtime data</h1>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>You can find the full source code of this example in <a href="https://github.com/maplibre/maplibre-native/blob/main/platform/android/MapLibreAndroidTestApp/src/main/java/org/maplibre/android/testapp/activity/camera/CameraAnimationTypeActivity.kt"><code>CameraAnimationTypeActivity.kt</code></a> of the MapLibreAndroidTestApp.</p>
+<p>You can find the full source code of this example in <a href="https://github.com/maplibre/maplibre-native/blob/main/platform/android/MapLibreAndroidTestApp/src/main/java/org/maplibre/android/testapp/activity/style/RealTimeGeoJsonActivity.kt"><code>RealTimeGeoJsonActivity.kt</code></a> of the MapLibreAndroidTestApp.</p>
 </div>
-<p>This example showcases the different animation types.</p>
-<ul>
-<li><strong>Move</strong>: available via the <code>MapLibreMap.moveCamera</code> method.</li>
-<li><strong>Ease</strong>: available via the <code>MapLibreMap.easeCamera</code> method.</li>
-<li><strong>Animate</strong>: available via the <code>MapLibreMap.animateCamera</code> method.</li>
-</ul>
-<h3 id="move">Move</h3>
-<p>The <code>MapLibreMap.moveCamera</code> method jumps to the camera position provided.</p>
-<div class="language-kotlin highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kd">val</span><span class="w"> </span><span class="nv">cameraPosition</span><span class="w"> </span><span class="o">=</span>
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">    </span><span class="n">CameraPosition</span><span class="p">.</span><span class="na">Builder</span><span class="p">()</span>
-</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">        </span><span class="p">.</span><span class="na">target</span><span class="p">(</span><span class="n">nextLatLng</span><span class="p">)</span>
-</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">        </span><span class="p">.</span><span class="na">zoom</span><span class="p">(</span><span class="m">14.0</span><span class="p">)</span>
-</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="w">        </span><span class="p">.</span><span class="na">tilt</span><span class="p">(</span><span class="m">30.0</span><span class="p">)</span>
-</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="w">        </span><span class="p">.</span><span class="na">tilt</span><span class="p">(</span><span class="m">0.0</span><span class="p">)</span>
-</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="w">        </span><span class="p">.</span><span class="na">build</span><span class="p">()</span>
-</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="n">maplibreMap</span><span class="p">.</span><span class="na">moveCamera</span><span class="p">(</span><span class="n">CameraUpdateFactory</span><span class="p">.</span><span class="na">newCameraPosition</span><span class="p">(</span><span class="n">cameraPosition</span><span class="p">))</span>
-</span></code></pre></div>
+<p>In this example you will learn how to add a live GeoJSON source. We have set up a <a href="https://m6rgfvqjp34nnwqcdm4cmmy3cm0dtupu.lambda-url.us-east-1.on.aws/">lambda function</a> that returns a new GeoJSON point every time it is called. </p>
 <figure>
-<video controls="controls" poster="https://dwxvn1oqw6mkc.cloudfront.net/android-documentation-resources/move_animation_thumbnail.jpg" width="250">
-    <source src="https://dwxvn1oqw6mkc.cloudfront.net/android-documentation-resources/move_animation.mp4" />
+<video controls="controls" poster="https://dwxvn1oqw6mkc.cloudfront.net/android-documentation-resources/live_realtime_data_thumbnail.jpg" width="250">
+    <source src="https://dwxvn1oqw6mkc.cloudfront.net/android-documentation-resources/live_realtime_data.mp4" />
   </video>
 </figure>
-<h3 id="ease">Ease</h3>
-<p>The <code>MapLibreMap.moveCamera</code> eases to the camera position provided (with constant ground speed).</p>
-<div class="language-kotlin highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kd">val</span><span class="w"> </span><span class="nv">cameraPosition</span><span class="w"> </span><span class="o">=</span>
-</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">    </span><span class="n">CameraPosition</span><span class="p">.</span><span class="na">Builder</span><span class="p">()</span>
-</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">        </span><span class="p">.</span><span class="na">target</span><span class="p">(</span><span class="n">nextLatLng</span><span class="p">)</span>
-</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="w">        </span><span class="p">.</span><span class="na">zoom</span><span class="p">(</span><span class="m">15.0</span><span class="p">)</span>
-</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="w">        </span><span class="p">.</span><span class="na">bearing</span><span class="p">(</span><span class="m">180.0</span><span class="p">)</span>
-</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="w">        </span><span class="p">.</span><span class="na">tilt</span><span class="p">(</span><span class="m">30.0</span><span class="p">)</span>
-</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="w">        </span><span class="p">.</span><span class="na">build</span><span class="p">()</span>
-</span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="n">maplibreMap</span><span class="p">.</span><span class="na">easeCamera</span><span class="p">(</span>
-</span><span id="__span-1-9"><a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="w">    </span><span class="n">CameraUpdateFactory</span><span class="p">.</span><span class="na">newCameraPosition</span><span class="p">(</span><span class="n">cameraPosition</span><span class="p">),</span>
-</span><span id="__span-1-10"><a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="w">    </span><span class="m">7500</span><span class="p">,</span>
-</span><span id="__span-1-11"><a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a><span class="w">    </span><span class="n">callback</span>
-</span><span id="__span-1-12"><a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a><span class="p">)</span>
+<p>First we will create a <code>GeoJSONSource</code>.</p>
+<div class="language-kotlin highlight"><span class="filename">Adding GeoJSON source</span><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="k">try</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">    </span><span class="n">style</span><span class="p">.</span><span class="na">addSource</span><span class="p">(</span><span class="n">GeoJsonSource</span><span class="p">(</span><span class="n">ID_GEOJSON_SOURCE</span><span class="p">,</span><span class="w"> </span><span class="n">URI</span><span class="p">(</span><span class="n">URL_GEOJSON_SOURCE</span><span class="p">)))</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="p">}</span><span class="w"> </span><span class="k">catch</span><span class="w"> </span><span class="p">(</span><span class="n">malformedUriException</span><span class="p">:</span><span class="w"> </span><span class="n">URISyntaxException</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">    </span><span class="n">Timber</span><span class="p">.</span><span class="na">e</span><span class="p">(</span><span class="n">malformedUriException</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;Invalid URL&quot;</span><span class="p">)</span>
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="p">}</span>
 </span></code></pre></div>
-<figure>
-<video controls="controls" poster="https://dwxvn1oqw6mkc.cloudfront.net/android-documentation-resources/ease_animation_thumbnail.jpg" preload="none" width="250">
-    <source src="https://dwxvn1oqw6mkc.cloudfront.net/android-documentation-resources/ease_animation.mp4" />
-  </video>
-</figure>
-<h3 id="animate">Animate</h3>
-<p>The <code>MapLibreMap.animateCamera</code> uses a powered flight animation move to the camera position provided<sup id="fnref:1"><a class="footnote-ref" href="#fn:1">1</a></sup>.</p>
-<div class="language-kotlin highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="kd">val</span><span class="w"> </span><span class="nv">cameraPosition</span><span class="w"> </span><span class="o">=</span>
-</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">    </span><span class="n">CameraPosition</span><span class="p">.</span><span class="na">Builder</span><span class="p">().</span><span class="na">target</span><span class="p">(</span><span class="n">nextLatLng</span><span class="p">).</span><span class="na">bearing</span><span class="p">(</span><span class="m">270.0</span><span class="p">).</span><span class="na">tilt</span><span class="p">(</span><span class="m">20.0</span><span class="p">).</span><span class="na">build</span><span class="p">()</span>
-</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="n">maplibreMap</span><span class="p">.</span><span class="na">animateCamera</span><span class="p">(</span>
-</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="w">    </span><span class="n">CameraUpdateFactory</span><span class="p">.</span><span class="na">newCameraPosition</span><span class="p">(</span><span class="n">cameraPosition</span><span class="p">),</span>
-</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="w">    </span><span class="m">7500</span><span class="p">,</span>
-</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="w">    </span><span class="n">callback</span>
-</span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="p">)</span>
+<p>Next we will create a <code>SymbolLayer</code> that uses the source.</p>
+<div class="language-kotlin highlight"><span class="filename">Adding a SymbolLayer source</span><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kd">val</span><span class="w"> </span><span class="nv">layer</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">SymbolLayer</span><span class="p">(</span><span class="n">ID_GEOJSON_LAYER</span><span class="p">,</span><span class="w"> </span><span class="n">ID_GEOJSON_SOURCE</span><span class="p">)</span>
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="n">layer</span><span class="p">.</span><span class="na">setProperties</span><span class="p">(</span>
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">    </span><span class="n">PropertyFactory</span><span class="p">.</span><span class="na">iconImage</span><span class="p">(</span><span class="s">&quot;plane&quot;</span><span class="p">),</span>
+</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="w">    </span><span class="n">PropertyFactory</span><span class="p">.</span><span class="na">iconAllowOverlap</span><span class="p">(</span><span class="kc">true</span><span class="p">)</span>
+</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="p">)</span>
+</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="n">style</span><span class="p">.</span><span class="na">addLayer</span><span class="p">(</span><span class="n">layer</span><span class="p">)</span>
 </span></code></pre></div>
-<figure>
-<video controls="controls" poster="https://dwxvn1oqw6mkc.cloudfront.net/android-documentation-resources/animate_animation_thumbnail.jpg" preload="none" width="250">
-    <source src="https://dwxvn1oqw6mkc.cloudfront.net/android-documentation-resources/animate_animation.mp4" />
-  </video>
-</figure>
-<h2 id="animation-callbacks">Animation Callbacks</h2>
-<p>In the previous section a <code>CancellableCallback</code> was passed to the last two animation methods. This callback shows a toast message when the animation is cancelled or when it is finished.</p>
-<div class="language-kotlin highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="kd">private</span><span class="w"> </span><span class="kd">val</span><span class="w"> </span><span class="nv">callback</span><span class="p">:</span><span class="w"> </span><span class="n">CancelableCallback</span><span class="w"> </span><span class="o">=</span>
-</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">    </span><span class="k">object</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="nc">CancelableCallback</span><span class="w"> </span><span class="p">{</span>
-</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="w">        </span><span class="kd">override</span><span class="w"> </span><span class="kd">fun</span><span class="w"> </span><span class="nf">onCancel</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
-</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="w">            </span><span class="n">Timber</span><span class="p">.</span><span class="na">i</span><span class="p">(</span><span class="s">&quot;Duration onCancel Callback called.&quot;</span><span class="p">)</span>
-</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="w">            </span><span class="n">Toast</span><span class="p">.</span><span class="na">makeText</span><span class="p">(</span>
-</span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="w">                </span><span class="n">applicationContext</span><span class="p">,</span>
-</span><span id="__span-3-7"><a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="w">                </span><span class="s">&quot;Ease onCancel Callback called.&quot;</span><span class="p">,</span>
-</span><span id="__span-3-8"><a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a><span class="w">                </span><span class="n">Toast</span><span class="p">.</span><span class="na">LENGTH_LONG</span>
-</span><span id="__span-3-9"><a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a><span class="w">            </span><span class="p">)</span>
-</span><span id="__span-3-10"><a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a><span class="w">                </span><span class="p">.</span><span class="na">show</span><span class="p">()</span>
-</span><span id="__span-3-11"><a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a><span class="w">        </span><span class="p">}</span>
+<p>We use define a <code>Runnable</code> and use <code>android.os.Handler</code> with a <code>android.os.Looper</code> to update the GeoJSON source every 2 seconds.</p>
+<div class="language-kotlin highlight"><span class="filename">Defining a Runnable for updating the GeoJSON source</span><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="kd">private</span><span class="w"> </span><span class="kd">inner</span><span class="w"> </span><span class="kd">class</span><span class="w"> </span><span class="nc">RefreshGeoJsonRunnable</span><span class="p">(</span>
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">    </span><span class="kd">private</span><span class="w"> </span><span class="kd">val</span><span class="w"> </span><span class="nv">maplibreMap</span><span class="p">:</span><span class="w"> </span><span class="n">MapLibreMap</span><span class="p">,</span>
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">    </span><span class="kd">private</span><span class="w"> </span><span class="kd">val</span><span class="w"> </span><span class="nv">handler</span><span class="p">:</span><span class="w"> </span><span class="n">Handler</span>
+</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="p">)</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="n">Runnable</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="w">    </span><span class="kd">override</span><span class="w"> </span><span class="kd">fun</span><span class="w"> </span><span class="nf">run</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="w">        </span><span class="kd">val</span><span class="w"> </span><span class="nv">geoJsonSource</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">maplibreMap</span><span class="p">.</span><span class="na">style</span><span class="o">!!</span><span class="p">.</span><span class="na">getSource</span><span class="p">(</span><span class="n">ID_GEOJSON_SOURCE</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">GeoJsonSource</span>
+</span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="w">        </span><span class="n">geoJsonSource</span><span class="p">.</span><span class="na">setUri</span><span class="p">(</span><span class="n">URL_GEOJSON_SOURCE</span><span class="p">)</span>
+</span><span id="__span-2-8"><a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="w">        </span><span class="kd">val</span><span class="w"> </span><span class="nv">features</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">geoJsonSource</span><span class="p">.</span><span class="na">querySourceFeatures</span><span class="p">(</span><span class="kc">null</span><span class="p">)</span>
+</span><span id="__span-2-9"><a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="w">        </span><span class="n">setIconRotation</span><span class="p">(</span><span class="n">features</span><span class="p">)</span>
+</span><span id="__span-2-10"><a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a><span class="w">        </span><span class="n">handler</span><span class="p">.</span><span class="na">postDelayed</span><span class="p">(</span><span class="k">this</span><span class="p">,</span><span class="w"> </span><span class="m">2000</span><span class="p">)</span>
+</span><span id="__span-2-11"><a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a><span class="w">    </span><span class="p">}</span>
+</span><span id="__span-2-12"><a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a><span class="p">}</span>
+</span></code></pre></div>
+<h2 id="bonus-set-icon-rotation">Bonus: set icon rotation</h2>
+<p>You can set the icon rotation of the icon when ever the point is updated based on the last two points.</p>
+<div class="language-kotlin highlight"><span class="filename">Defining a Runnable for updating the GeoJSON source</span><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">features</span><span class="p">.</span><span class="na">size</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="m">1</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">    </span><span class="n">Timber</span><span class="p">.</span><span class="na">e</span><span class="p">(</span><span class="s">&quot;Expected only one feature&quot;</span><span class="p">)</span>
+</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="w">    </span><span class="k">return</span>
+</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="p">}</span>
+</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>
+</span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="kd">val</span><span class="w"> </span><span class="nv">feature</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">features</span><span class="o">[</span><span class="m">0</span><span class="o">]</span>
+</span><span id="__span-3-7"><a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="kd">val</span><span class="w"> </span><span class="nv">geometry</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">feature</span><span class="p">.</span><span class="na">geometry</span><span class="p">()</span>
+</span><span id="__span-3-8"><a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">geometry</span><span class="w"> </span><span class="k">!is</span><span class="w"> </span><span class="n">Point</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-3-9"><a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a><span class="w">    </span><span class="n">Timber</span><span class="p">.</span><span class="na">e</span><span class="p">(</span><span class="s">&quot;Expected geometry to be a point&quot;</span><span class="p">)</span>
+</span><span id="__span-3-10"><a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a><span class="w">    </span><span class="k">return</span>
+</span><span id="__span-3-11"><a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a><span class="p">}</span>
 </span><span id="__span-3-12"><a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a>
-</span><span id="__span-3-13"><a id="__codelineno-3-13" name="__codelineno-3-13" href="#__codelineno-3-13"></a><span class="w">        </span><span class="kd">override</span><span class="w"> </span><span class="kd">fun</span><span class="w"> </span><span class="nf">onFinish</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
-</span><span id="__span-3-14"><a id="__codelineno-3-14" name="__codelineno-3-14" href="#__codelineno-3-14"></a><span class="w">            </span><span class="n">Timber</span><span class="p">.</span><span class="na">i</span><span class="p">(</span><span class="s">&quot;Duration onFinish Callback called.&quot;</span><span class="p">)</span>
-</span><span id="__span-3-15"><a id="__codelineno-3-15" name="__codelineno-3-15" href="#__codelineno-3-15"></a><span class="w">            </span><span class="n">Toast</span><span class="p">.</span><span class="na">makeText</span><span class="p">(</span>
-</span><span id="__span-3-16"><a id="__codelineno-3-16" name="__codelineno-3-16" href="#__codelineno-3-16"></a><span class="w">                </span><span class="n">applicationContext</span><span class="p">,</span>
-</span><span id="__span-3-17"><a id="__codelineno-3-17" name="__codelineno-3-17" href="#__codelineno-3-17"></a><span class="w">                </span><span class="s">&quot;Ease onFinish Callback called.&quot;</span><span class="p">,</span>
-</span><span id="__span-3-18"><a id="__codelineno-3-18" name="__codelineno-3-18" href="#__codelineno-3-18"></a><span class="w">                </span><span class="n">Toast</span><span class="p">.</span><span class="na">LENGTH_LONG</span>
-</span><span id="__span-3-19"><a id="__codelineno-3-19" name="__codelineno-3-19" href="#__codelineno-3-19"></a><span class="w">            </span><span class="p">)</span>
-</span><span id="__span-3-20"><a id="__codelineno-3-20" name="__codelineno-3-20" href="#__codelineno-3-20"></a><span class="w">                </span><span class="p">.</span><span class="na">show</span><span class="p">()</span>
-</span><span id="__span-3-21"><a id="__codelineno-3-21" name="__codelineno-3-21" href="#__codelineno-3-21"></a><span class="w">        </span><span class="p">}</span>
-</span><span id="__span-3-22"><a id="__codelineno-3-22" name="__codelineno-3-22" href="#__codelineno-3-22"></a><span class="w">    </span><span class="p">}</span>
+</span><span id="__span-3-13"><a id="__codelineno-3-13" name="__codelineno-3-13" href="#__codelineno-3-13"></a><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">lastLocation</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="kc">null</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-3-14"><a id="__codelineno-3-14" name="__codelineno-3-14" href="#__codelineno-3-14"></a><span class="w">    </span><span class="n">lastLocation</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">geometry</span>
+</span><span id="__span-3-15"><a id="__codelineno-3-15" name="__codelineno-3-15" href="#__codelineno-3-15"></a><span class="w">    </span><span class="k">return</span>
+</span><span id="__span-3-16"><a id="__codelineno-3-16" name="__codelineno-3-16" href="#__codelineno-3-16"></a><span class="p">}</span>
+</span><span id="__span-3-17"><a id="__codelineno-3-17" name="__codelineno-3-17" href="#__codelineno-3-17"></a>
+</span><span id="__span-3-18"><a id="__codelineno-3-18" name="__codelineno-3-18" href="#__codelineno-3-18"></a><span class="n">maplibreMap</span><span class="p">.</span><span class="na">style</span><span class="o">!!</span><span class="p">.</span><span class="na">getLayer</span><span class="p">(</span><span class="n">ID_GEOJSON_LAYER</span><span class="p">)</span><span class="o">!!</span><span class="p">.</span><span class="na">setProperties</span><span class="p">(</span>
+</span><span id="__span-3-19"><a id="__codelineno-3-19" name="__codelineno-3-19" href="#__codelineno-3-19"></a><span class="w">    </span><span class="n">PropertyFactory</span><span class="p">.</span><span class="na">iconRotate</span><span class="p">(</span><span class="n">calculateRotationAngle</span><span class="p">(</span><span class="n">lastLocation</span><span class="o">!!</span><span class="p">,</span><span class="w"> </span><span class="n">geometry</span><span class="p">)),</span>
+</span><span id="__span-3-20"><a id="__codelineno-3-20" name="__codelineno-3-20" href="#__codelineno-3-20"></a><span class="p">)</span>
 </span></code></pre></div>
-<div class="footnote">
-<hr />
-<ol>
-<li id="fn:1">
-<p>The implementation is based on  Van Wijk, Jarke J.; Nuij, Wim A. A. “Smooth and efficient zooming and panning.” INFOVIS ’03. pp. 15–22. <a href="https://www.win.tue.nl/~vanwijk/zoompan.pdf#page=5">https://www.win.tue.nl/~vanwijk/zoompan.pdf#page=5</a>&#160;<a class="footnote-backref" href="#fnref:1" title="Jump back to footnote 1 in the text">&#8617;</a></p>
-</li>
-</ol>
-</div>
 
 
 
