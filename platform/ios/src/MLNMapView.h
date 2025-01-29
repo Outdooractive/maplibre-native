@@ -2322,6 +2322,24 @@ of north, the map will automatically snap to exact north.
  */
 - (void)addPluginLayerType:(Class)pluginLayerClass;
 
+#pragma mark - Outdooractive private
+
+/// Dormant means there is no underlying GL view (typically in the background)
+@property (nonatomic, getter=isDormant) BOOL dormant;
+
+@property (nonatomic, nullable) UIImage *lastSnapshotImage;
+
+- (void)validateLocationServices;
+
+- (void)validateUserHeadingUpdating;
+
+- (void)locationManager:(id<MLNLocationManager>)manager didUpdateLocations:(NSArray *)locations;
+- (void)locationManager:(__unused id<MLNLocationManager>)manager didUpdateLocations:(NSArray *)locations animated:(BOOL)animated completionHandler:(nullable void (^)(void))completion;
+
+- (void)locationManager:(__unused id<MLNLocationManager>)manager didUpdateHeading:(CLHeading *)newHeading;
+
+- (MLNMapCamera *)cameraAtCoordinate:(CLLocationCoordinate2D)centerCoordinate zoomLevel:(double)zoomLevel;
+
 @end
 
 NS_ASSUME_NONNULL_END

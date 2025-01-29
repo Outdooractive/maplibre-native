@@ -44,7 +44,6 @@ class DownloadRegionActivity : AppCompatActivity(), OfflineRegion.OfflineRegionO
         setContentView(binding.root)
 
         offlineManager = OfflineManager.getInstance(this)
-        offlineManager.setOfflineMapboxTileCountLimit(Long.MAX_VALUE)
         initUi()
 
         deleteOldOfflineRegions {
@@ -168,10 +167,6 @@ class DownloadRegionActivity : AppCompatActivity(), OfflineRegion.OfflineRegionO
 
     override fun onError(error: OfflineRegionError) {
         logMessage("Error: $error")
-    }
-
-    override fun mapboxTileCountLimitExceeded(limit: Long) {
-        logMessage("Error: tile count limit exceeded")
     }
 
     protected fun logMessage(message: String) {

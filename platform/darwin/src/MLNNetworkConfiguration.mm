@@ -4,6 +4,8 @@
 #import "MLNSettings_Private.h"
 #endif
 
+#include <mbgl/storage/network_status.hpp>
+
 #import "MLNReachability.h"
 
 static NSString * const MLNStartTime = @"start_time";
@@ -62,6 +64,19 @@ NSString * const kMLNDownloadPerformanceEvent = @"mobile.performance_trace";
     sessionConfiguration.URLCache = nil;
 
     return sessionConfiguration;
+}
+
+- (void)setConnected:(BOOL)connected {
+    if (!connected) {
+        mbgl::NetworkStatus::Set(mbgl::NetworkStatus::Status::Offline);
+    } else {
+        mbgl::NetworkStatus::Set(mbgl::NetworkStatus::Status::Online);
+    }
+}
+
+- (BOOL)connected {
+    auto status = mbgl::NetworkStatus::Get();
+    return status == mbgl::NetworkStatus::Status::Online;
 }
 
 // MARK: - MLNNativeNetworkDelegate

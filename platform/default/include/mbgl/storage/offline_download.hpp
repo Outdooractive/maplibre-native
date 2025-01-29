@@ -49,8 +49,6 @@ private:
      */
     void ensureResource(Resource&&, std::function<void(Response)> = {});
 
-    void onMapboxTileCountLimitExceeded();
-
     int64_t id;
     OfflineRegionDefinition definition;
     OfflineDatabase& offlineDatabase;

@@ -89,7 +89,7 @@ public:
     /**
      * @brief Sets the maximum cache size.
      *
-     * @param size Cache maximum size in bytes.
+     * @param size Cache maximum size (number of resources).
      * @return reference to ResourceOptions for chaining options together.
      */
     ResourceOptions& withMaximumCacheSize(uint64_t size);
@@ -97,7 +97,7 @@ public:
     /**
      * @brief Gets the previously set (or default) maximum allowed cache size.
      *
-     * @return maximum allowed cache database size in bytes.
+     * @return maximum allowed cache database size (number of resources).
      */
     uint64_t maximumCacheSize() const;
 

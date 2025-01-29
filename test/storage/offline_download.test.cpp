@@ -48,13 +48,8 @@ public:
         if (responseErrorFn) responseErrorFn(error);
     }
 
-    void mapboxTileCountLimitExceeded(uint64_t limit) override {
-        if (mapboxTileCountLimitExceededFn) mapboxTileCountLimitExceededFn(limit);
-    }
-
     std::function<void(OfflineRegionStatus)> statusChangedFn;
     std::function<void(Response::Error)> responseErrorFn;
-    std::function<void(uint64_t)> mapboxTileCountLimitExceededFn;
 };
 
 class OfflineTest {
@@ -524,110 +519,6 @@ TEST(OfflineDownload, RequestErrorsAreRetried) {
     observer->statusChangedFn = [&](OfflineRegionStatus status) {
         if (status.complete()) {
             EXPECT_EQ(1u, status.completedResourceCount);
-            test.loop.stop();
-        }
-    };
-
-    download.setObserver(std::move(observer));
-    download.setState(OfflineRegionDownloadState::Active);
-
-    test.loop.run();
-}
-
-TEST(OfflineDownload, TileCountLimitExceededNoTileResponse) {
-    OfflineTest test;
-    auto region = test.createRegion();
-    ASSERT_TRUE(region);
-    OfflineDownload download(region->getID(),
-                             OfflineTilePyramidRegionDefinition(
-                                 "http://127.0.0.1:3000/style.json", LatLngBounds::world(), 0.0, 0.0, 1.0, false),
-                             test.db,
-                             test.fileSource);
-
-    uint64_t tileLimit = 0;
-
-    test.db.setOfflineMapboxTileCountLimit(tileLimit);
-
-    test.fileSource.styleResponse = [&](const Resource& resource) {
-        EXPECT_EQ("http://127.0.0.1:3000/style.json", resource.url);
-        return test.response("mapbox_source.style.json");
-    };
-    //    test.fileSource.tileResponse = [&] (const Resource& resource) {
-    //        EXPECT_EQ("maptiler://0-0-0.vector.pbf", resource.url);
-    //        return test.response("0-0-0.vector.pbf");
-    //    };
-
-    auto observer = std::make_unique<MockObserver>();
-    bool mapboxTileCountLimitExceededCalled = false;
-
-    observer->mapboxTileCountLimitExceededFn = [&](uint64_t limit) {
-        EXPECT_FALSE(mapboxTileCountLimitExceededCalled);
-        EXPECT_EQ(tileLimit, limit);
-        mapboxTileCountLimitExceededCalled = true;
-    };
-
-    observer->statusChangedFn = [&](OfflineRegionStatus status) {
-        if (!mapboxTileCountLimitExceededCalled) {
-            EXPECT_FALSE(status.complete());
-            EXPECT_EQ(OfflineRegionDownloadState::Active, status.downloadState);
-        } else {
-            EXPECT_EQ(OfflineRegionDownloadState::Inactive, status.downloadState);
-            test.loop.stop();
-        }
-    };
-
-    download.setObserver(std::move(observer));
-    download.setState(OfflineRegionDownloadState::Active);
-
-    test.loop.run();
-}
-
-TEST(OfflineDownload, TileCountLimitExceededWithTileResponse) {
-    OfflineTest test;
-    auto region = test.createRegion();
-    ASSERT_TRUE(region);
-    OfflineDownload download(region->getID(),
-                             OfflineTilePyramidRegionDefinition(
-                                 "http://127.0.0.1:3000/style.json", LatLngBounds::world(), 0.0, 0.0, 1.0, true),
-                             test.db,
-                             test.fileSource);
-
-    uint64_t tileLimit = 1;
-
-    test.db.setOfflineMapboxTileCountLimit(tileLimit);
-
-    test.fileSource.styleResponse = [&](const Resource& resource) {
-        EXPECT_EQ("http://127.0.0.1:3000/style.json", resource.url);
-        return test.response("mapbox_source.style.json");
-    };
-
-    test.fileSource.tileResponse = [&](const Resource& resource) {
-        const Resource::TileData& tile = *resource.tileData;
-        EXPECT_EQ("maptiler://{z}-{x}-{y}.vector.pbf", tile.urlTemplate);
-        EXPECT_EQ(1, tile.pixelRatio);
-        EXPECT_EQ(0, tile.x);
-        EXPECT_EQ(0, tile.y);
-        EXPECT_EQ(0, tile.z);
-        return test.response("0-0-0.vector.pbf");
-    };
-
-    auto observer = std::make_unique<MockObserver>();
-    bool mapboxTileCountLimitExceededCalled = false;
-
-    observer->mapboxTileCountLimitExceededFn = [&](uint64_t limit) {
-        EXPECT_FALSE(mapboxTileCountLimitExceededCalled);
-        EXPECT_EQ(tileLimit, limit);
-        mapboxTileCountLimitExceededCalled = true;
-    };
-
-    observer->statusChangedFn = [&](OfflineRegionStatus status) {
-        if (!mapboxTileCountLimitExceededCalled) {
-            EXPECT_EQ(OfflineRegionDownloadState::Active, status.downloadState);
-        } else {
-            EXPECT_EQ(OfflineRegionDownloadState::Inactive, status.downloadState);
-            test.loop.stop();
-        }
-        if (status.completedResourceCount > tileLimit) {
             test.loop.stop();
         }
     };
