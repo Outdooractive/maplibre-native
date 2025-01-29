@@ -31,7 +31,6 @@ static NSString * const MLNOfflineStorageFileName3_2_0_beta_1 = @"offline.db";
 
 const NSNotificationName MLNOfflinePackProgressChangedNotification = @"MLNOfflinePackProgressChanged";
 const NSNotificationName MLNOfflinePackErrorNotification = @"MLNOfflinePackError";
-const NSNotificationName MLNOfflinePackMaximumMapboxTilesReachedNotification = @"MLNOfflinePackMaximumMapboxTilesReached";
 
 const MLNOfflinePackUserInfoKey MLNOfflinePackUserInfoKeyState = @"State";
 const MLNOfflinePackUserInfoKey MLNOfflinePackUserInfoKeyProgress = @"Progress";
@@ -46,7 +45,6 @@ const MLNExceptionName MLNUnsupportedRegionTypeException = @"MLNUnsupportedRegio
 @property (nonatomic) std::shared_ptr<mbgl::DatabaseFileSource> mbglDatabaseFileSource;
 @property (nonatomic) std::shared_ptr<mbgl::FileSource> mbglOnlineFileSource;
 @property (nonatomic) std::shared_ptr<mbgl::FileSource> mbglFileSource;
-@property (nonatomic, getter=isPaused) BOOL paused;
 @end
 
 @implementation MLNOfflineStorage {
@@ -59,10 +57,6 @@ const MLNExceptionName MLNUnsupportedRegionTypeException = @"MLNUnsupportedRegio
     static MLNOfflineStorage *sharedOfflineStorage;
     dispatch_once(&onceToken, ^{
         sharedOfflineStorage = [[self alloc] init];
-#if TARGET_OS_IPHONE || TARGET_OS_SIMULATOR
-        [[NSNotificationCenter defaultCenter] addObserver:sharedOfflineStorage selector:@selector(unpauseFileSource:) name:UIApplicationWillEnterForegroundNotification object:nil];
-        [[NSNotificationCenter defaultCenter] addObserver:sharedOfflineStorage selector:@selector(pauseFileSource:) name:UIApplicationDidEnterBackgroundNotification object:nil];
-#endif
         [sharedOfflineStorage reloadPacks];
     });
 
@@ -75,28 +69,6 @@ const MLNExceptionName MLNUnsupportedRegionTypeException = @"MLNUnsupportedRegio
 
     return sharedOfflineStorage;
 }
-
-#if TARGET_OS_IPHONE || TARGET_OS_SIMULATOR
-- (void)pauseFileSource:(__unused NSNotification *)notification {
-    if (self.isPaused) {
-        return;
-    }
-
-    _mbglOnlineFileSource->pause();
-    _mbglDatabaseFileSource->pause();
-    self.paused = YES;
-}
-
-- (void)unpauseFileSource:(__unused NSNotification *)notification {
-    if (!self.isPaused) {
-        return;
-    }
-
-    _mbglOnlineFileSource->resume();
-    _mbglDatabaseFileSource->resume();
-    self.paused = NO;
-}
-#endif
 
 - (void)setDelegate:(id<MLNOfflineStorageDelegate>)newValue {
     MLNLogDebug(@"Setting delegate: %@", newValue);
@@ -322,7 +294,7 @@ const MLNExceptionName MLNUnsupportedRegionTypeException = @"MLNUnsupportedRegio
 }
 
 - (void)addContentsOfFile:(NSString *)filePath withCompletionHandler:(MLNBatchedOfflinePackAdditionCompletionHandler)completion {
-    MLNLogDebug(@"Adding contentsOfFile: %@ completionHandler: %@", filePath, completion);
+    MLNLogInfo(@"Adding contentsOfFile: %@ completionHandler: %@", filePath, completion);
     NSURL *fileURL = [NSURL fileURLWithPath:filePath];
 
     [self addContentsOfURL:fileURL withCompletionHandler:completion];
@@ -330,7 +302,7 @@ const MLNExceptionName MLNUnsupportedRegionTypeException = @"MLNUnsupportedRegio
 }
 
 - (void)addContentsOfURL:(NSURL *)fileURL withCompletionHandler:(MLNBatchedOfflinePackAdditionCompletionHandler)completion {
-    MLNLogDebug(@"Adding contentsOfURL: %@ completionHandler: %@", fileURL, completion);
+    MLNLogInfo(@"Adding contentsOfURL: %@ completionHandler: %@", fileURL, completion);
     NSFileManager *fileManager = [NSFileManager defaultManager];
 
     if (!fileURL.isFileURL) {
@@ -404,10 +376,89 @@ const MLNExceptionName MLNUnsupportedRegionTypeException = @"MLNUnsupportedRegio
     });
 }
 
+- (void)addContentsOfTilepack:(NSURL *)fileURL
+                toOfflinePack:(MLNOfflinePack *)offlinePack
+        withCompletionHandler:(MLNBatchedOfflinePackAdditionCompletionHandler)completion
+{
+    MLNLogInfo(@"Adding addContentsOfTilepack: %@ completionHandler: %@", fileURL, completion);
+
+    if (!fileURL.isFileURL) {
+        [NSException raise:NSInvalidArgumentException format:@"%@ must be a valid file path", fileURL.absoluteString];
+    }
+
+    __weak MLNOfflineStorage *weakSelf = self;
+    [self _addContentsOfTilepack:fileURL.path
+                   toOfflinePack:offlinePack
+           withCompletionHandler:^(NSArray<MLNOfflinePack *> * _Nullable packs, NSError * _Nullable error)
+     {
+        if (packs) {
+            NSMutableDictionary *packsByIdentifier = [NSMutableDictionary dictionary];
+
+            MLNOfflineStorage *strongSelf = weakSelf;
+            for (MLNOfflinePack *pack in packs) {
+                [packsByIdentifier setObject:pack forKey:@(pack.mbglOfflineRegion->getID())];
+            }
+
+            id mutablePacks = [strongSelf mutableArrayValueForKey:@"packs"];
+            NSMutableIndexSet *replaceIndexSet = [NSMutableIndexSet indexSet];
+            NSMutableArray *replacePacksArray = [NSMutableArray array];
+            [strongSelf.packs enumerateObjectsUsingBlock:^(MLNOfflinePack * _Nonnull pack, NSUInteger idx, BOOL * _Nonnull stop) {
+                MLNOfflinePack *newPack = packsByIdentifier[@(pack.mbglOfflineRegion->getID())];
+                if (newPack) {
+                    MLNOfflinePack *previousPack = [mutablePacks objectAtIndex:idx];
+                    [previousPack invalidate];
+                    [replaceIndexSet addIndex:idx];
+                    [replacePacksArray addObject:[packsByIdentifier objectForKey:@(newPack.mbglOfflineRegion->getID())]];
+                    [packsByIdentifier removeObjectForKey:@(newPack.mbglOfflineRegion->getID())];
+                }
+            }];
+
+            if (replaceIndexSet.count > 0) {
+                [mutablePacks replaceObjectsAtIndexes:replaceIndexSet withObjects:replacePacksArray];
+            }
+
+            [mutablePacks addObjectsFromArray:packsByIdentifier.allValues];
+        }
+        if (completion) {
+            completion(fileURL, packs, error);
+        }
+    }];
+}
+
+- (void)_addContentsOfTilepack:(NSString *)filePath
+                 toOfflinePack:(MLNOfflinePack* )offlinePack
+         withCompletionHandler:(void (^)(NSArray<MLNOfflinePack *> * _Nullable packs, NSError * _Nullable error))completion
+{
+    _mbglDatabaseFileSource->mergeTilepack(std::string(static_cast<const char *>([filePath UTF8String])), offlinePack.mbglOfflineRegion->getID(), [&, completion, filePath](mbgl::expected<mbgl::OfflineRegions, std::exception_ptr> result) {
+        NSError *error;
+        NSMutableArray *packs;
+        if (!result) {
+            NSString *description = [NSString stringWithFormat:NSLocalizedStringWithDefaultValue(@"ADD_FILE_CONTENTS_FAILED_DESC", @"Foundation", nil, @"Unable to add offline packs from the file at %@.", @"User-friendly error description"), filePath];
+            error = [NSError errorWithDomain:MLNErrorDomain code:MLNErrorCodeModifyingOfflineStorageFailed
+                                    userInfo:@{
+                NSLocalizedDescriptionKey: description,
+                NSLocalizedFailureReasonErrorKey: @(mbgl::util::toString(result.error()).c_str())
+            }];
+        } else {
+            auto& regions = result.value();
+            packs = [NSMutableArray arrayWithCapacity:regions.size()];
+            for (auto &region : regions) {
+                MLNOfflinePack *pack = [[MLNOfflinePack alloc] initWithMBGLRegion:new mbgl::OfflineRegion(std::move(region))];
+                [packs addObject:pack];
+            }
+        }
+        if (completion) {
+            dispatch_async(dispatch_get_main_queue(), [&, completion, error, packs](void) {
+                completion(packs, error);
+            });
+        }
+    });
+}
+
 // MARK: Pack management methods
 
 - (void)addPackForRegion:(id <MLNOfflineRegion>)region withContext:(NSData *)context completionHandler:(MLNOfflinePackAdditionCompletionHandler)completion {
-    MLNLogDebug(@"Adding packForRegion: %@ contextLength: %lu completionHandler: %@", region, (unsigned long)context.length, completion);
+    MLNLogInfo(@"Adding packForRegion: %@ contextLength: %lu completionHandler: %@", region, (unsigned long)context.length, completion);
     __weak MLNOfflineStorage *weakSelf = self;
     [self _addPackForRegion:region withContext:context completionHandler:^(MLNOfflinePack * _Nullable pack, NSError * _Nullable error) {
         pack.state = MLNOfflinePackStateInactive;
@@ -447,7 +498,7 @@ const MLNExceptionName MLNUnsupportedRegionTypeException = @"MLNUnsupportedRegio
 }
 
 - (void)removePack:(MLNOfflinePack *)pack withCompletionHandler:(MLNOfflinePackRemovalCompletionHandler)completion {
-    MLNLogDebug(@"Removing pack: %@ completionHandler: %@", pack, completion);
+    MLNLogInfo(@"Removing pack: %@ completionHandler: %@", pack, completion);
     [[self mutableArrayValueForKey:@"packs"] removeObject:pack];
     [self _removePack:pack withCompletionHandler:^(NSError * _Nullable error) {
         if (completion) {
@@ -539,11 +590,6 @@ const MLNExceptionName MLNUnsupportedRegionTypeException = @"MLNUnsupportedRegio
     });
 }
 
-- (void)setMaximumAllowedMapboxTiles:(uint64_t)maximumCount {
-    MLNLogDebug(@"Setting maximumAllowedMapboxTiles: %lu", (unsigned long)maximumCount);
-    _mbglDatabaseFileSource->setOfflineMapboxTileCountLimit(maximumCount);
-}
-
 // MARK: - Ambient cache management
 
 - (void)setMaximumAmbientCacheSize:(NSUInteger)cacheSize withCompletionHandler:(void (^)(NSError  * _Nullable))completion {
@@ -610,6 +656,11 @@ const MLNExceptionName MLNUnsupportedRegionTypeException = @"MLNUnsupportedRegio
         }
     });
 }
+
+- (void)runPackDatabaseAutomatically:(BOOL)autopack {
+    _mbglDatabaseFileSource->runPackDatabaseAutomatically(autopack);
+}
+
 // MARK: -
 
 - (unsigned long long)countOfBytesCompleted {

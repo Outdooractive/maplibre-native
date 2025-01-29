@@ -426,15 +426,10 @@ void OfflineDownload::deactivateDownload() {
 
 bool OfflineDownload::flushResourcesBuffer() {
     if (buffer.empty()) return true;
-    try {
-        offlineDatabase.putRegionResources(id, buffer, status);
-        buffer.clear();
-        observer->statusChanged(status);
-        return true;
-    } catch (const MapboxTileLimitExceededException&) {
-        onMapboxTileCountLimitExceeded();
-        return false;
-    }
+    offlineDatabase.putRegionResources(id, buffer, status);
+    buffer.clear();
+    observer->statusChanged(status);
+    return true;
 }
 
 void OfflineDownload::queueResource(Resource&& resource) {
@@ -510,11 +505,6 @@ void OfflineDownload::ensureResource(Resource&& resource, std::function<void(Res
             return;
         }
 
-        if (offlineDatabase.exceedsOfflineMapboxTileCountLimit(resource)) {
-            onMapboxTileCountLimitExceeded();
-            return;
-        }
-
         auto fileRequestsIt = requests.insert(requests.begin(), nullptr);
         *fileRequestsIt = onlineFileSource.request(resource, [=, this](const Response& onlineResponse) {
             if (onlineResponse.error) {
@@ -544,19 +534,9 @@ void OfflineDownload::ensureResource(Resource&& resource, std::function<void(Res
             // TODO: Simplify the tile count limit check code path!
             if ((buffer.size() == kResourcesBatchSize || resourcesRemaining.empty()) && !flushResourcesBuffer()) return;
 
-            if (offlineDatabase.exceedsOfflineMapboxTileCountLimit(resource)) {
-                onMapboxTileCountLimitExceeded();
-                return;
-            }
-
             continueDownload();
         });
     });
-}
-
-void OfflineDownload::onMapboxTileCountLimitExceeded() {
-    observer->mapboxTileCountLimitExceeded(offlineDatabase.getOfflineMapboxTileCountLimit());
-    setState(OfflineRegionDownloadState::Inactive);
 }
 
 } // namespace mbgl

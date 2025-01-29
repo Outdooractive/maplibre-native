@@ -275,7 +275,7 @@ const NSTimeInterval MLNAnimationDuration = 0.3;
 
 /// Duration of an animation due to a user location update, typically chosen to
 /// match a typical interval between user location updates.
-const NSTimeInterval MLNUserLocationAnimationDuration = 1.0;
+const NSTimeInterval MLNUserLocationAnimationDuration = 0.3;
 
 /// Distance between the map view’s edge and that of the user location
 /// annotation view.
@@ -288,7 +288,7 @@ const CGFloat MLNMinimumZoom = 3;
 const double MLNMinimumZoomLevelForUserTracking = 10.5;
 
 /// Initial zoom level when entering user tracking mode from a low zoom level.
-const double MLNDefaultZoomLevelForUserTracking = 14.0;
+const double MLNDefaultZoomLevelForUserTracking = 15.0;
 
 /// Distance threshold to stop the camera while animating.
 const CLLocationDistance MLNDistanceThresholdForCameraPause = 500;
@@ -407,8 +407,6 @@ public:
 @property (nonatomic) CGFloat scale;
 @property (nonatomic) CGFloat angle;
 @property (nonatomic) CGFloat quickZoomStart;
-/// Dormant means there is no underlying GL view (typically in the background)
-@property (nonatomic, getter=isDormant) BOOL dormant;
 @property (nonatomic, readonly, getter=isDisplayLinkActive) BOOL displayLinkActive;
 @property (nonatomic, readonly, getter=isRotationAllowed) BOOL rotationAllowed;
 @property (nonatomic) CGFloat rotationThresholdWhileZooming;
@@ -631,7 +629,7 @@ public:
     {
         styleURL = [MLNStyle defaultStyleURL];
     }
-    MLNLogDebug(@"Setting styleURL: %@", styleURL);
+    MLNLogInfo(@"Setting styleURL: %@", styleURL);
     styleURL = styleURL.mgl_URLByStandardizingScheme;
     self.style = nil;
     self.mbglMap.getStyle().loadURL([[styleURL absoluteString] UTF8String]);
@@ -1693,7 +1691,7 @@ public:
 
 - (void)setPreferredFramesPerSecond:(MLNMapViewPreferredFramesPerSecond)preferredFramesPerSecond
 {
-    MLNLogDebug(@"Setting preferredFramesPerSecond: %ld", preferredFramesPerSecond);
+    MLNLogInfo(@"Setting preferredFramesPerSecond: %ld", preferredFramesPerSecond);
     if (_preferredFramesPerSecond == preferredFramesPerSecond)
     {
         return;
@@ -1929,6 +1927,7 @@ public:
 }
 
 // MARK: - Application lifecycle
+
 - (void)willResignActive:(NSNotification *)notification
 {
     MLNAssertIsMainThread();
@@ -4575,6 +4574,12 @@ static void *windowScreenContext = &windowScreenContext;
     return [self cameraForCameraOptions:cameraOptions];
 }
 
+- (MLNMapCamera *)cameraAtCoordinate:(CLLocationCoordinate2D)centerCoordinate zoomLevel:(double)zoomLevel
+{
+    CLLocationDistance altitude = MLNAltitudeForZoomLevel(zoomLevel, 0.0, centerCoordinate.latitude, self.frame.size);
+    return [MLNMapCamera cameraLookingAtCenterCoordinate:centerCoordinate acrossDistance:altitude pitch:0.0 heading:0.0];
+}
+
 - (MLNMapCamera *)cameraForCameraOptions:(const mbgl::CameraOptions &)cameraOptions
 {
     if (!_mbglMap)
@@ -4824,7 +4829,7 @@ static void *windowScreenContext = &windowScreenContext;
 
 - (void)addAnnotation:(id <MLNAnnotation>)annotation
 {
-    MLNLogDebug(@"Adding annotation: %@", annotation);
+    MLNLogInfo(@"Adding annotation: %@", annotation);
     if ( ! annotation) return;
 
     // The core bulk add API is efficient with respect to indexing and
@@ -4835,7 +4840,7 @@ static void *windowScreenContext = &windowScreenContext;
 
 - (void)addAnnotations:(NSArray<id <MLNAnnotation>> *)annotations
 {
-    MLNLogDebug(@"Adding: %lu annotations", annotations.count);
+    MLNLogInfo(@"Adding %lu annotations", annotations.count);
     if ( ! annotations) return;
     [self willChangeValueForKey:@"annotations"];
 
@@ -5140,7 +5145,7 @@ static void *windowScreenContext = &windowScreenContext;
 
 - (void)removeAnnotations:(NSArray<id <MLNAnnotation>> *)annotations
 {
-    MLNLogDebug(@"Removing: %lu annotations", annotations.count);
+    MLNLogInfo(@"Removing %lu annotations", annotations.count);
     if ( ! annotations) return;
 
     [self willChangeValueForKey:@"annotations"];
@@ -5225,13 +5230,13 @@ static void *windowScreenContext = &windowScreenContext;
 
 - (void)addOverlay:(id <MLNOverlay>)overlay
 {
-    MLNLogDebug(@"Adding overlay: %@", overlay);
+    MLNLogInfo(@"Adding overlay: %@", overlay);
     [self addOverlays:@[ overlay ]];
 }
 
 - (void)addOverlays:(NSArray<id <MLNOverlay>> *)overlays
 {
-    MLNLogDebug(@"Adding: %lu overlays", overlays.count);
+    MLNLogInfo(@"Adding %lu overlays", overlays.count);
 #if DEBUG
     for (id <MLNOverlay> overlay in overlays)
     {
@@ -5244,13 +5249,13 @@ static void *windowScreenContext = &windowScreenContext;
 
 - (void)removeOverlay:(id <MLNOverlay>)overlay
 {
-    MLNLogDebug(@"Removing overlay: %@", overlay);
+    MLNLogInfo(@"Removing overlay: %@", overlay);
     [self removeOverlays:@[ overlay ]];
 }
 
 - (void)removeOverlays:(NSArray<id <MLNOverlay>> *)overlays
 {
-    MLNLogDebug(@"Removing: %lu overlays", overlays.count);
+    MLNLogInfo(@"Removing %lu overlays", overlays.count);
 #if DEBUG
     for (id <MLNOverlay> overlay in overlays)
     {
@@ -5944,7 +5949,7 @@ static void *windowScreenContext = &windowScreenContext;
 
 - (void)showAnnotations:(NSArray<id <MLNAnnotation>> *)annotations edgePadding:(UIEdgeInsets)insets animated:(BOOL)animated completionHandler:(nullable void (^)(void))completion
 {
-    MLNLogDebug(@"Showing: %lu annotations edgePadding: %@ animated: %@", annotations.count, NSStringFromUIEdgeInsets(insets), MLNStringFromBOOL(animated));
+    MLNLogDebug(@"Showing %lu annotations, edgePadding: %@, animated: %@", annotations.count, NSStringFromUIEdgeInsets(insets), MLNStringFromBOOL(animated));
     if ( ! annotations.count)
     {
         if (completion) {
@@ -6191,7 +6196,7 @@ static void *windowScreenContext = &windowScreenContext;
 
 - (void)setUserTrackingMode:(MLNUserTrackingMode)mode animated:(BOOL)animated completionHandler:(nullable void (^)(void))completion
 {
-    MLNLogDebug(@"Setting userTrackingMode: %lu animated: %@", mode, MLNStringFromBOOL(animated));
+    MLNLogInfo(@"Setting userTrackingMode: %lu, animated: %@", mode, MLNStringFromBOOL(animated));
     if (mode == _userTrackingMode)
     {
         if (completion)
@@ -6292,7 +6297,7 @@ static void *windowScreenContext = &windowScreenContext;
 
 - (void)setTargetCoordinate:(CLLocationCoordinate2D)targetCoordinate animated:(BOOL)animated completionHandler:(nullable void (^)(void))completion
 {
-    MLNLogDebug(@"Setting targetCoordinate: %@ animated: %@", MLNStringFromCLLocationCoordinate2D(targetCoordinate), MLNStringFromBOOL(animated));
+    MLNLogDebug(@"Setting targetCoordinate: %@, animated: %@", MLNStringFromCLLocationCoordinate2D(targetCoordinate), MLNStringFromBOOL(animated));
     BOOL isSynchronous = YES;
     if (targetCoordinate.latitude != self.targetCoordinate.latitude
         || targetCoordinate.longitude != self.targetCoordinate.longitude)
@@ -6344,7 +6349,9 @@ static void *windowScreenContext = &windowScreenContext;
 
 - (void)locationManager:(id<MLNLocationManager>)manager didUpdateLocations:(NSArray *)locations
 {
-    [self locationManager:manager didUpdateLocations:locations animated:YES completionHandler:nil];
+    BOOL animated = (self.userTrackingMode != MLNUserTrackingModeFollowWithHeading);
+
+    [self locationManager:manager didUpdateLocations:locations animated:animated completionHandler:nil];
 }
 
 - (void)locationManager:(__unused id<MLNLocationManager>)manager didUpdateLocations:(NSArray *)locations animated:(BOOL)animated completionHandler:(nullable void (^)(void))completion
@@ -7485,8 +7492,21 @@ static void *windowScreenContext = &windowScreenContext;
         annotationView.center = userPoint;
     }
 
-    if (CGRectContainsPoint(CGRectInset(self.bounds, -MLNAnnotationUpdateViewportOutset.width,
-        -MLNAnnotationUpdateViewportOutset.height), userPoint))
+    CGRect annotationViewportRect = CGRectInset(self.bounds, -MLNAnnotationUpdateViewportOutset.width,
+                                                -MLNAnnotationUpdateViewportOutset.height);
+    BOOL annotationVisible = CGRectContainsPoint(annotationViewportRect, userPoint);
+    if (@available(iOS 14.0, *)) {
+        if ([self.locationManager respondsToSelector:@selector(accuracyAuthorization)] && self.locationManager.accuracyAuthorization == CLAccuracyAuthorizationReducedAccuracy) {
+            CGFloat accuracyRingRadius = round(self.userLocation.location.horizontalAccuracy / [self metersPerPointAtLatitude:self.userLocation.coordinate.latitude zoomLevel:self.zoomLevel]);
+            CGRect accuracyRingRect = CGRectMake(userPoint.x - accuracyRingRadius,
+                                                 userPoint.y - accuracyRingRadius,
+                                                 accuracyRingRadius * 2,
+                                                 accuracyRingRadius * 2);
+            annotationVisible = CGRectIntersectsRect(annotationViewportRect, accuracyRingRect);
+        }
+    }
+
+    if (annotationVisible)
     {
         // Smoothly move the user location annotation view and callout view to
         // the new location.

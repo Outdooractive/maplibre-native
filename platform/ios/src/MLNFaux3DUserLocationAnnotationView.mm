@@ -222,7 +222,7 @@ const CGFloat MLNUserLocationApproximateZoomThreshold = 7.0;
     if ( ! _puckDot)
     {
         _puckDot = [self circleLayerWithSize:MLNUserLocationAnnotationPuckSize];
-        _puckDot.backgroundColor = [[UIColor whiteColor] CGColor];
+        _puckDot.backgroundColor = [[UIColor colorWithWhite:1.0 alpha:0.8] CGColor];
         _puckDot.shadowColor = [puckShadowColor CGColor];
         _puckDot.shadowOpacity = shadowOpacity;
         _puckDot.shadowPath = [[UIBezierPath bezierPathWithOvalInRect:_puckDot.bounds] CGPath];

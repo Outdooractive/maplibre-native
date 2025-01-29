@@ -32,11 +32,6 @@ namespace util {
 struct IOException;
 } // namespace util
 
-struct MapboxTileLimitExceededException : util::Exception {
-    MapboxTileLimitExceededException()
-        : util::Exception("Mapbox tile limit exceeded") {}
-};
-
 class OfflineDatabase {
 public:
     OfflineDatabase(std::string path, const TileServerOptions& options);
@@ -71,6 +66,8 @@ public:
 
     expected<OfflineRegions, std::exception_ptr> mergeDatabase(const std::string& sideDatabasePath);
 
+    expected<OfflineRegions, std::exception_ptr> mergeTilepack(const std::string& sideDatabasePath, const int64_t regionID);
+
     expected<OfflineRegionMetadata, std::exception_ptr> updateMetadata(int64_t regionID, const OfflineRegionMetadata&);
 
     std::exception_ptr deleteRegion(OfflineRegion&&);
@@ -86,11 +83,6 @@ public:
     expected<OfflineRegionStatus, std::exception_ptr> getRegionCompletedStatus(int64_t regionID);
 
     std::exception_ptr setMaximumAmbientCacheSize(uint64_t);
-    void setOfflineMapboxTileCountLimit(uint64_t);
-    uint64_t getOfflineMapboxTileCountLimit();
-    bool offlineMapboxTileCountLimitExceeded();
-    uint64_t getOfflineMapboxTileCount();
-    bool exceedsOfflineMapboxTileCountLimit(const Resource&);
     void markUsedResources(int64_t regionID, const std::list<Resource>&);
     std::exception_ptr pack();
     void runPackDatabaseAutomatically(bool autopack_) { autopack = autopack_; }
@@ -98,8 +90,6 @@ public:
     void reopenDatabaseReadOnly(bool readOnly);
 
 private:
-    class DatabaseSizeChangeStats;
-
     void initialize();
     void handleError(const mapbox::sqlite::Exception&, const char* action);
     void handleError(const util::IOException&, const char* action);
@@ -112,6 +102,7 @@ private:
     void migrateToVersion5();
     void migrateToVersion3();
     void migrateToVersion6();
+    void migrateToVersion7();
     void cleanup();
     bool disabled();
     void vacuum();
@@ -147,42 +138,14 @@ private:
     T getPragma(const char*);
 
     uint64_t maximumAmbientCacheSize = util::DEFAULT_MAX_CACHE_SIZE;
-    uint64_t offlineMapboxTileCountLimit = util::mapbox::DEFAULT_OFFLINE_TILE_COUNT_LIMIT;
 
-    std::optional<uint64_t> offlineMapboxTileCount;
-
-    bool evict(uint64_t neededFreeSize, DatabaseSizeChangeStats& stats);
+    bool evict(uint64_t neededFreeSize, bool limitNumberOfResourcesToDelete);
 
     TileServerOptions tileServerOptions;
-
-    class DatabaseSizeChangeStats {
-    public:
-        explicit DatabaseSizeChangeStats(OfflineDatabase*);
-
-        // Returns difference between current database size and
-        // database size at the time of creation of this object.
-        int64_t diff() const;
-
-        // Returns how many bytes were released comparing to a database
-        // size at the time of creation of this object.
-        uint64_t bytesReleased() const;
-
-        // Returns page size for the database.
-        uint64_t pageSize() const;
-
-    private:
-        uint64_t pageSize_ = 0u;
-        uint64_t pageCount_ = 0u;
-        uint64_t initialSize_ = 0u;
-        OfflineDatabase* db = nullptr;
-    };
-
-    friend class DatabaseSizeChangeStats;
 
     // Lazily initializes currentAmbientCacheSize.
     std::exception_ptr initAmbientCacheSize();
     std::optional<uint64_t> currentAmbientCacheSize;
-    void updateAmbientCacheSize(DatabaseSizeChangeStats&);
 
     bool autopack = true;
     bool readOnly = false;

@@ -64,10 +64,6 @@ class OfflineDownloadTest : OfflineRegion.OfflineRegionObserver {
         Logger.e(TAG, "Error while downloading offline region: $error")
     }
 
-    override fun mapboxTileCountLimitExceeded(limit: Long) {
-        Logger.e(TAG, "Tile count limited exceeded: $limit")
-    }
-
     private fun createTestRegionDefinition(): OfflineRegionDefinition {
         return OfflineGeometryRegionDefinition(
             TestStyles.getPredefinedStyleWithFallback("Streets"),

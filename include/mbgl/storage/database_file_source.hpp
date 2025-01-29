@@ -103,18 +103,13 @@ public:
     virtual void clearAmbientCache(std::function<void(std::exception_ptr)>);
 
     /**
-     * Sets the maximum size in bytes for the ambient cache.
+     * Sets the maximum size (number of resources) for the ambient cache.
      *
      * This call is potentially expensive because it will try
      * to trim the data in case the database is larger than the
      * size defined. The size of offline regions are not affected
      * by this settings, but the ambient cache will always try
-     * to not exceed the maximum size defined, taking into account
-     * the current size for the offline regions.
-     *
-     * If the maximum size is set to 50 MB and 40 MB are already
-     * used by offline regions, the cache size will be effectively
-     * 10 MB.
+     * to not exceed the maximum size defined.
      *
      * Setting the size to 0 will disable the cache if there is no
      * offline region on the database.
@@ -202,14 +197,27 @@ public:
      * Only resources and tiles that belong to a region will be copied over. Identical
      * regions will be flattened into a single new region in the main database.
      *
-     * Invokes the callback with a `MapboxOfflineTileCountExceededException` error if
-     * the merge operation would result in the offline tile count limit being exceeded.
-     *
      * Merged regions may not be in a completed status if the secondary database
      * does not contain all the tiles or resources required by the region definition.
      */
     virtual void mergeOfflineRegions(const std::string& sideDatabasePath,
                                      std::function<void(expected<OfflineRegions, std::exception_ptr>)>);
+
+    /*
+     * Merge a tilepack offline database (OA format) into the main offline database.
+     *
+     * When the database merge is completed, the provided callback will be
+     * executed on the database thread; it is the responsibility of the SDK bindings
+     * to re-execute a user-provided callback on the main thread.
+     *
+     * Resources and tiles will be copied over to the given region.
+     *
+     * Merged regions may not be in a completed status if the tilepack database
+     * does not contain all the tiles or resources required by the region definition.
+     */
+    virtual void mergeTilepack(const std::string& sideDatabasePath,
+                               const int64_t regionID,
+                               std::function<void(expected<OfflineRegions, std::exception_ptr>)>);
 
     /**
      * Remove an offline region from the database and perform any resources
@@ -240,12 +248,6 @@ public:
      * data on the cache matches the server, no new data gets transmitted.
      */
     virtual void invalidateOfflineRegion(const OfflineRegion&, std::function<void(std::exception_ptr)>);
-
-    /**
-     * Changing or bypassing this limit without permission from Mapbox is
-     * prohibited by the Mapbox Terms of Service.
-     */
-    virtual void setOfflineMapboxTileCountLimit(uint64_t) const;
 
     void setResourceOptions(ResourceOptions) override;
     ResourceOptions getResourceOptions() override;
