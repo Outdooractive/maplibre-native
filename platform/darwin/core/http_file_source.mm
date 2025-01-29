@@ -221,7 +221,6 @@ BOOL isValidOutdooractiveEndpoint(NSURL *url) {
 
 MLN_APPLE_EXPORT
 NSURL *resourceURL(const Resource& resource) {
-
     NSURL *url = [NSURL URLWithString:@(resource.url.c_str())];
 
 #if TARGET_OS_IPHONE || TARGET_OS_SIMULATOR
