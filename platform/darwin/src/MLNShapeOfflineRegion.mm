@@ -42,7 +42,7 @@
 }
 
 - (instancetype)initWithStyleURL:(NSURL *)styleURL shape:(MLNShape *)shape fromZoomLevel:(double)minimumZoomLevel toZoomLevel:(double)maximumZoomLevel {
-    MLNLogDebug(@"Initializing styleURL: %@ shape: %@ fromZoomLevel: %f toZoomLevel: %f", styleURL, shape, minimumZoomLevel, maximumZoomLevel);
+    MLNLogInfo(@"Initializing styleURL: %@ shape: %@ fromZoomLevel: %f toZoomLevel: %f", styleURL, shape, minimumZoomLevel, maximumZoomLevel);
     if (self = [super init]) {
         if (!styleURL) {
             styleURL = [MLNStyle defaultStyleURL];

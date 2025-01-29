@@ -119,3 +119,11 @@ afterEvaluate {
 signing {
     sign(publishing.publications)
 }
+
+/// OA Changes
+tasks {
+    withType<Sign> {
+        onlyIf { !project.hasProperty("skip.signing") }
+    }
+}
+///

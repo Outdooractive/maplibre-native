@@ -820,108 +820,6 @@ TEST(OfflineDatabase, TEST_REQUIRES_WRITE(Pack)) {
     EXPECT_EQ(0u, log.uncheckedCount());
 }
 
-TEST(OfflineDatabase, MapboxTileLimitExceeded) {
-    FixtureLog log;
-
-    uint64_t limit = 60;
-
-    OfflineDatabase db(":memory:", fixture::tileServerOptions);
-    db.setOfflineMapboxTileCountLimit(limit);
-
-    Response response;
-    response.data = randomString(4096);
-
-    auto insertAmbientTile = [&](unsigned i) {
-        const Resource ambientTile = Resource::tile(
-            "maptiler://tiles/tiles/ambient_tile_" + std::to_string(i), 1, 0, 0, 0, Tileset::Scheme::XYZ);
-        db.put(ambientTile, response);
-    };
-
-    auto insertRegionTile = [&](int64_t regionID, uint64_t i) {
-        const Resource tile = Resource::tile(
-            "maptiler://tiles/tiles/region_tile_" + std::to_string(i), 1, 0, 0, 0, Tileset::Scheme::XYZ);
-        db.putRegionResource(regionID, tile, response);
-    };
-
-    OfflineTilePyramidRegionDefinition definition1{
-        "maptiler://maps/style1", LatLngBounds::hull({1, 2}, {3, 4}), 5, 6, 2.0, true};
-    OfflineRegionMetadata metadata1{{1, 2, 3}};
-
-    OfflineTilePyramidRegionDefinition definition2{
-        "maptiler://maps/style2", LatLngBounds::hull({1, 2}, {3, 4}), 5, 6, 2.0, true};
-    OfflineRegionMetadata metadata2{{1, 2, 3}};
-
-    auto region1 = db.createRegion(definition1, metadata1);
-    auto region2 = db.createRegion(definition2, metadata2);
-
-    // Fine because tile limit only affects offline region.
-    for (unsigned i = 0; i < limit * 2; ++i) {
-        insertAmbientTile(i);
-    }
-
-    ASSERT_EQ(db.getOfflineMapboxTileCount(), 0);
-
-    // Fine because this region is under the tile limit.
-    for (uint64_t i = 0; i < limit - 10; ++i) {
-        insertRegionTile(region1->getID(), i);
-    }
-
-    ASSERT_EQ(db.getOfflineMapboxTileCount(), limit - 10);
-
-    // Fine because this region + the previous is at the limit.
-    for (uint64_t i = limit; i < limit + 10; ++i) {
-        insertRegionTile(region2->getID(), i);
-    }
-
-    ASSERT_EQ(db.getOfflineMapboxTileCount(), limit);
-
-    // Full.
-    ASSERT_THROW(insertRegionTile(region1->getID(), 200), MapboxTileLimitExceededException);
-    ASSERT_THROW(insertRegionTile(region2->getID(), 201), MapboxTileLimitExceededException);
-
-    // These tiles are already on respective
-    // regions.
-    insertRegionTile(region1->getID(), 0);
-    insertRegionTile(region2->getID(), 60);
-
-    // Should be fine, ambient tile.
-    insertAmbientTile(333);
-
-    // Also fine, not Mapbox.
-    const Resource notMapboxTile = Resource::tile("foobar://region_tile", 1, 0, 0, 0, Tileset::Scheme::XYZ);
-    db.putRegionResource(region1->getID(), notMapboxTile, response);
-
-    // These tiles are not on the region they are
-    // being added to, but exist on another region,
-    // so they do not add to the total size.
-    insertRegionTile(region2->getID(), 0);
-    insertRegionTile(region1->getID(), 60);
-
-    ASSERT_EQ(db.getOfflineMapboxTileCount(), limit);
-
-    // The tile 1 belongs to two regions and will
-    // still count as resource.
-    db.deleteRegion(std::move(*region2));
-
-    ASSERT_EQ(db.getOfflineMapboxTileCount(), 51);
-
-    // Add new tiles to the region 1. We are adding
-    // 10, which would blow up the limit if it wasn't
-    // for the fact that tile 60 is already on the
-    // database and will not count.
-    for (uint64_t i = limit; i < limit + 10; ++i) {
-        insertRegionTile(region1->getID(), i);
-    }
-
-    // Full again.
-    ASSERT_THROW(insertRegionTile(region1->getID(), 202), MapboxTileLimitExceededException);
-
-    db.deleteRegion(std::move(*region1));
-
-    ASSERT_EQ(0u, db.listRegions().value().size());
-    ASSERT_EQ(0u, log.uncheckedCount());
-}
-
 TEST(OfflineDatabase, Invalidate) {
     using namespace std::chrono_literals;
 
@@ -1322,67 +1220,6 @@ TEST(OfflineDatabase, HasRegionResourceTile) {
     EXPECT_EQ(0u, log.uncheckedCount());
 }
 
-TEST(OfflineDatabase, OfflineMapboxTileCount) {
-    FixtureLog log;
-    OfflineDatabase db(":memory:", fixture::tileServerOptions);
-    OfflineTilePyramidRegionDefinition definition{
-        "http://example.com/style", LatLngBounds::hull({1, 2}, {3, 4}), 5, 6, 2.0, true};
-    OfflineRegionMetadata metadata;
-
-    auto region1 = db.createRegion(definition, metadata);
-    ASSERT_TRUE(region1);
-    auto region2 = db.createRegion(definition, metadata);
-    ASSERT_TRUE(region2);
-
-    Resource nonMapboxTile = Resource::tile("http://example.com/", 1.0, 0, 0, 0, Tileset::Scheme::XYZ);
-    Resource mapboxTile1 = Resource::tile("maptiler://tiles/tiles/1", 1.0, 0, 0, 0, Tileset::Scheme::XYZ);
-    Resource mapboxTile2 = Resource::tile("maptiler://tiles/tiles/2", 1.0, 0, 0, 1, Tileset::Scheme::XYZ);
-
-    Response response;
-    response.data = std::make_shared<std::string>("data");
-
-    // Count is initially zero.
-    EXPECT_EQ(0u, db.getOfflineMapboxTileCount());
-
-    // Count stays the same after putting a non-tile resource.
-    db.putRegionResource(region1->getID(), Resource::style("http://example.com/"), response);
-    EXPECT_EQ(0u, db.getOfflineMapboxTileCount());
-
-    // Count stays the same after putting a non-Mapbox tile.
-    db.putRegionResource(region1->getID(), nonMapboxTile, response);
-    EXPECT_EQ(0u, db.getOfflineMapboxTileCount());
-
-    // Count increases after putting a Mapbox tile not used by another region.
-    db.putRegionResource(region1->getID(), mapboxTile1, response);
-    EXPECT_EQ(1u, db.getOfflineMapboxTileCount());
-
-    // Count stays the same after putting a Mapbox tile used by another region.
-    db.putRegionResource(region2->getID(), mapboxTile1, response);
-    EXPECT_EQ(1u, db.getOfflineMapboxTileCount());
-
-    // Count stays the same after putting a Mapbox tile used by the same region.
-    db.putRegionResource(region2->getID(), mapboxTile1, response);
-    EXPECT_EQ(1u, db.getOfflineMapboxTileCount());
-
-    // Count stays the same after deleting a region when the tile is still used by another region.
-    db.deleteRegion(std::move(*region2));
-    EXPECT_EQ(1u, db.getOfflineMapboxTileCount());
-
-    // Count stays the same after the putting a non-offline Mapbox tile.
-    db.put(mapboxTile2, response);
-    EXPECT_EQ(1u, db.getOfflineMapboxTileCount());
-
-    // Count increases after putting a pre-existing, but non-offline Mapbox tile.
-    db.putRegionResource(region1->getID(), mapboxTile2, response);
-    EXPECT_EQ(2u, db.getOfflineMapboxTileCount());
-
-    // Count decreases after deleting a region when the tiles are not used by other regions.
-    db.deleteRegion(std::move(*region1));
-    EXPECT_EQ(0u, db.getOfflineMapboxTileCount());
-
-    EXPECT_EQ(0u, log.uncheckedCount());
-}
-
 TEST(OfflineDatabase, BatchInsertion) {
     FixtureLog log;
     OfflineDatabase db(":memory:", fixture::tileServerOptions);
@@ -1406,41 +1243,6 @@ TEST(OfflineDatabase, BatchInsertion) {
     for (uint32_t i = 1; i <= 100; i++) {
         EXPECT_TRUE(bool(db.get(Resource::style("http://example.com/"s + util::toString(i)))));
     }
-
-    EXPECT_EQ(0u, log.uncheckedCount());
-}
-
-TEST(OfflineDatabase, BatchInsertionMapboxTileCountExceeded) {
-    FixtureLog log;
-    OfflineDatabase db(":memory:", fixture::tileServerOptions);
-    db.setOfflineMapboxTileCountLimit(1);
-    db.setMaximumAmbientCacheSize(1024 * 100);
-
-    OfflineTilePyramidRegionDefinition definition{"", LatLngBounds::world(), 0, INFINITY, 1.0, false};
-    auto region = db.createRegion(definition, OfflineRegionMetadata());
-    ASSERT_TRUE(region);
-
-    Response response;
-    response.data = randomString(1024);
-    std::list<std::tuple<Resource, Response>> resources;
-
-    resources.emplace_back(Resource::style("http://example.com/"), response);
-    resources.emplace_back(Resource::tile("maptiler://tiles/1", 1.0, 0, 0, 0, Tileset::Scheme::XYZ), response);
-    resources.emplace_back(Resource::tile("maptiler://tiles/2", 1.0, 0, 0, 0, Tileset::Scheme::XYZ), response);
-
-    OfflineRegionStatus status;
-    try {
-        db.putRegionResources(region->getID(), resources, status);
-        EXPECT_FALSE(true);
-    } catch (const MapboxTileLimitExceededException&) {
-        // Expected
-    }
-
-    EXPECT_EQ(0u, status.completedTileCount);
-    EXPECT_EQ(0u, status.completedResourceCount);
-    const auto completedStatus = db.getRegionCompletedStatus(region->getID()).value();
-    EXPECT_EQ(1u, completedStatus.completedTileCount);
-    EXPECT_EQ(2u, completedStatus.completedResourceCount);
 
     EXPECT_EQ(0u, log.uncheckedCount());
 }
@@ -1742,10 +1544,6 @@ TEST(OfflineDatabase, TEST_REQUIRES_WRITE(DisallowedIO)) {
     EXPECT_EQ(1u, log.count(warning(ResultCode::Auth, "Can't delete region: authorization denied")));
     EXPECT_EQ(0u, log.uncheckedCount());
 
-    EXPECT_EQ(std::numeric_limits<uint64_t>::max(), db.getOfflineMapboxTileCount());
-    EXPECT_EQ(1u, log.count(warning(ResultCode::Auth, "Can't get offline Mapbox tile count: authorization denied")));
-    EXPECT_EQ(0u, log.uncheckedCount());
-
     fs.reset();
 }
 #endif // __QT__
@@ -1906,37 +1704,6 @@ TEST(OfflineDatabase, MergeDatabaseWithMultipleRegionsWithOverlap) {
         // Ensure multiple entries for resources shared between regions
         EXPECT_EQ(593, query.get<int>(0));
     }
-}
-
-TEST(OfflineDatabase, MergeDatabaseWithSingleRegionTooManyNewTiles) {
-    FixtureLog log;
-    util::deleteFile(filename_sideload);
-    util::copyFile(filename_sideload, "test/fixtures/offline_database/sideload_sat_multiple.db");
-
-    OfflineDatabase db(":memory:", fixture::tileServerOptions);
-    db.setOfflineMapboxTileCountLimit(1);
-
-    auto result = db.mergeDatabase(filename_sideload);
-    EXPECT_FALSE(result);
-    EXPECT_EQ(1u, log.count({EventSeverity::Error, Event::Database, -1, "Mapbox tile limit exceeded"}));
-    EXPECT_EQ(0u, log.uncheckedCount());
-}
-
-TEST(OfflineDatabase, MergeDatabaseWithSingleRegionTooManyExistingTiles) {
-    FixtureLog log;
-    deleteDatabaseFiles();
-    util::deleteFile(filename_sideload);
-    util::copyFile(filename, "test/fixtures/offline_database/sideload_sat_multiple.db");
-    util::copyFile(filename_sideload, "test/fixtures/offline_database/satellite_test.db");
-
-    OfflineDatabase db(filename, fixture::tileServerOptions);
-    db.setOfflineMapboxTileCountLimit(2);
-
-    auto result = db.mergeDatabase(filename_sideload);
-    EXPECT_THROW(std::rethrow_exception(result.error()), MapboxTileLimitExceededException);
-
-    EXPECT_EQ(1u, log.count({EventSeverity::Error, Event::Database, -1, "Mapbox tile limit exceeded"}));
-    EXPECT_EQ(0u, log.uncheckedCount());
 }
 
 #ifndef WIN32 // Windows cannot copy a folder as a file

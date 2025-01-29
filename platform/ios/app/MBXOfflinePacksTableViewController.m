@@ -38,7 +38,6 @@ static NSString * const MBXOfflinePacksTableViewActiveCellReuseIdentifier = @"Ac
     [[MLNOfflineStorage sharedOfflineStorage] addObserver:self forKeyPath:@"packs" options:NSKeyValueObservingOptionInitial context:NULL];
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(offlinePackProgressDidChange:) name:MLNOfflinePackProgressChangedNotification object:nil];
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(offlinePackDidReceiveError:) name:MLNOfflinePackErrorNotification object:nil];
-    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(offlinePackDidReceiveMaximumAllowedMapboxTiles:) name:MLNOfflinePackMaximumMapboxTilesReachedNotification object:nil];
 }
 
 - (void)dealloc {
@@ -271,14 +270,6 @@ static NSString * const MBXOfflinePacksTableViewActiveCellReuseIdentifier = @"Ac
         [alertController addAction:[UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault handler:nil]];
         [self presentViewController:alertController animated:YES completion:nil];
     }
-}
-
-- (void)offlinePackDidReceiveMaximumAllowedMapboxTiles:(NSNotification *)notification {
-    MLNOfflinePack *pack = notification.object;
-    NSAssert([pack isKindOfClass:[MLNOfflinePack class]], @"MLNOfflineStorage notification has a non-pack object.");
-
-    uint64_t maximumCount = [notification.userInfo[MLNOfflinePackUserInfoKeyMaximumCount] unsignedLongLongValue];
-    NSLog(@"Offline pack “%@” reached limit of %llu tiles.", pack.name, maximumCount);
 }
 
 @end

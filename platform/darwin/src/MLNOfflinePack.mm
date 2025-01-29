@@ -45,7 +45,6 @@ public:
 
     void statusChanged(mbgl::OfflineRegionStatus status) override;
     void responseError(mbgl::Response::Error error) override;
-    void mapboxTileCountLimitExceeded(uint64_t limit) override;
 
 private:
     __weak MLNOfflinePack *pack = nullptr;
@@ -191,7 +190,7 @@ private:
 }
 
 - (void)setState:(MLNOfflinePackState)state {
-    MLNLogDebug(@"Setting state: %ld", (long)state);
+    MLNLogInfo(@"Setting state: %ld", (long)state);
     if (!self.mbglOfflineRegion) {
         // A progress update has arrived after the call to
         // -[MLNOfflineStorage removePack:withCompletionHandler:] but before the
@@ -270,15 +269,6 @@ private:
                             userInfo:userInfo];
 }
 
-- (void)didReceiveMaximumAllowedMapboxTiles:(uint64_t)limit {
-    MLNLogInfo(@"Notifying reached maximum allowed Mapbox tiles: %lu", (unsigned long)limit);
-    NSDictionary *userInfo = @{ MLNOfflinePackUserInfoKeyMaximumCount: @(limit) };
-    NSNotificationCenter *noteCenter = [NSNotificationCenter defaultCenter];
-    [noteCenter postNotificationName:MLNOfflinePackMaximumMapboxTilesReachedNotification
-                              object:self
-                            userInfo:userInfo];
-}
-
 NSError *MLNErrorFromResponseError(mbgl::Response::Error error) {
     NSInteger errorCode = MLNErrorCodeUnknown;
     switch (error.reason) {
@@ -315,12 +305,5 @@ void MBGLOfflineRegionObserver::responseError(mbgl::Response::Error error) {
     __weak MLNOfflinePack *weakPack = pack;
     dispatch_async(dispatch_get_main_queue(), ^{
         [weakPack didReceiveError:MLNErrorFromResponseError(error)];
-    });
-}
-
-void MBGLOfflineRegionObserver::mapboxTileCountLimitExceeded(uint64_t limit) {
-    __weak MLNOfflinePack *weakPack = pack;
-    dispatch_async(dispatch_get_main_queue(), ^{
-        [weakPack didReceiveMaximumAllowedMapboxTiles:limit];
     });
 }

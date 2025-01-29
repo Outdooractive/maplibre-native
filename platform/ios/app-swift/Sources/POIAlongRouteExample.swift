@@ -79,7 +79,7 @@ class POIAlongRouteExample: UIViewController, MLNMapViewDelegate {
         layer.lineColor = NSExpression(forConstantValue: UIColor(red: 59 / 255, green: 178 / 255, blue: 208 / 255, alpha: 1))
 
         // Use expression to smoothly adjust the line width from 2pt to 20pt between zoom levels 14 and 18.
-        layer.lineWidth = NSExpression(mglJSONObject: ["interpolate", ["linear"], ["zoom"], 14, 2, 18, 20])
+        layer.lineWidth = NSExpression(mlnJSONObject: ["interpolate", ["linear"], ["zoom"], 14, 2, 18, 20])
 
         // We can also add a second layer that will draw a stroke around the original line.
         let casingLayer = MLNLineStyleLayer(identifier: "polyline-case", source: source)
@@ -91,7 +91,7 @@ class POIAlongRouteExample: UIViewController, MLNMapViewDelegate {
         // Stroke color slightly darker than the line color.
         casingLayer.lineColor = NSExpression(forConstantValue: UIColor(red: 41 / 255, green: 145 / 255, blue: 171 / 255, alpha: 1))
         // Use expression to gradually increase the stroke width between zoom levels 14 and 18.
-        casingLayer.lineWidth = NSExpression(mglJSONObject: ["interpolate", ["linear"], ["zoom"], 14, 1, 18, 4])
+        casingLayer.lineWidth = NSExpression(mlnJSONObject: ["interpolate", ["linear"], ["zoom"], 14, 1, 18, 4])
 
         // Just for fun, let’s add another copy of the line with a dash pattern.
         let dashedLayer = MLNLineStyleLayer(identifier: "polyline-dash", source: source)

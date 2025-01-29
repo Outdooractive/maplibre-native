@@ -38,7 +38,7 @@
 }
 
 - (instancetype)initWithStyleURL:(NSURL *)styleURL bounds:(MLNCoordinateBounds)bounds fromZoomLevel:(double)minimumZoomLevel toZoomLevel:(double)maximumZoomLevel {
-    MLNLogDebug(@"Initializing styleURL: %@ bounds: %@ fromZoomLevel: %f toZoomLevel: %f", styleURL, MLNStringFromCoordinateBounds(bounds), minimumZoomLevel, maximumZoomLevel);
+    MLNLogInfo(@"Initializing styleURL: %@ bounds: %@ fromZoomLevel: %f toZoomLevel: %f", styleURL, MLNStringFromCoordinateBounds(bounds), minimumZoomLevel, maximumZoomLevel);
     if (self = [super init]) {
         if (!styleURL) {
             styleURL = [MLNStyle defaultStyleURL];

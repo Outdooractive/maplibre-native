@@ -47,7 +47,7 @@ class MultipleImagesExample: UIViewController, MLNMapViewDelegate {
 
         let imageLayer = MLNSymbolStyleLayer(identifier: "npc-poi-images", source: source)
         imageLayer.sourceLayerIdentifier = "pois"
-        imageLayer.iconImageName = NSExpression(mglJSONObject: [
+        imageLayer.iconImageName = NSExpression(mlnJSONObject: [
             "match", ["get", "POITYPE"],
             "Restroom", "restrooms",
             "Trailhead", "trailhead",

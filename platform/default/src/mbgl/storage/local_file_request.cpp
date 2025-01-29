@@ -1,5 +1,6 @@
 #include <mbgl/storage/file_source_request.hpp>
 #include <mbgl/storage/response.hpp>
+#include <mbgl/util/logging.hpp>
 #include <mbgl/util/io.hpp>
 
 #include <sys/types.h>
@@ -19,15 +20,18 @@ void requestLocalFile(const std::string& path,
     int result = stat(path.c_str(), &buf);
 
     if (result == 0 && (S_IFDIR & buf.st_mode)) {
+        Log::Info(Event::HttpRequest, "File resource is directory, url=" + path);
         response.error = std::make_unique<Response::Error>(Response::Error::Reason::NotFound);
     } else if (result == -1 && errno == ENOENT) {
         response.error = std::make_unique<Response::Error>(Response::Error::Reason::NotFound);
     } else {
         auto data = util::readFile(path, dataRange);
         if (!data) {
+            Log::Info(Event::HttpRequest, "Cannot read file resource, url=" + path);
             response.error = std::make_unique<Response::Error>(Response::Error::Reason::Other,
                                                                std::string("Cannot read file ") + path);
         } else {
+            Log::Info(Event::HttpRequest, "File resource loaded, url=" + path);
             response.data = std::make_shared<std::string>(std::move(*data));
         }
     }

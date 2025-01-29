@@ -225,9 +225,6 @@ class OfflineManager private constructor(context: Context) {
      * Only resources and tiles that belong to a region will be copied over. Identical
      * regions will be flattened into a single new region in the main database.
      *
-     * The operation will be aborted and [MergeOfflineRegionsCallback.onError] with an appropriate message
-     * will be invoked if the merge would result in the offline tile count limit being exceeded.
-     *
      * Merged regions may not be in a completed status if the secondary database
      * does not contain all the tiles or resources required by the region definition.
      *
@@ -249,6 +246,59 @@ class OfflineManager private constructor(context: Context) {
                     copyTempDatabaseFile(src, dst)
                     handler.post { // merge and update schema using the copy
                         mergeOfflineDatabaseFiles(dst, callback, true)
+                    }
+                } catch (ex: IOException) {
+                    ex.printStackTrace()
+                    errorMessage = ex.message
+                }
+            } else {
+                // path not readable, abort
+                errorMessage = "Secondary database needs to be located in a readable path."
+            }
+            if (errorMessage != null) {
+                val finalErrorMessage: String = errorMessage
+                handler.post { callback.onError(finalErrorMessage) }
+            }
+        }.start()
+    }
+
+    /**
+     * Merge an offline tilepack from a secondary database into the main offline database.
+     *
+     * When the merge is completed, or fails, the {@link MergeOfflineRegionsCallback} will be invoked on the main thread.
+     * The callback reference is <b>strongly kept</b> throughout the process,
+     * so it needs to be wrapped in a weak reference or released on the client side if necessary.
+     *
+     * The secondary database may need to be upgraded to the latest schema.
+     * This is done in-place and requires write-access to the provided path.
+     * If the app's process doesn't have write-access to the provided path,
+     * the file will be copied to the temporary, internal directory for the duration of the merge.
+     *
+     * Only resources and tiles that belong to a region will be copied over. Identical
+     * regions will be flattened into a single new region in the main database.
+     *
+     * Merged regions may not be in a completed status if the secondary database
+     * does not contain all the tiles or resources required by the region definition.
+     *
+     * @param path     secondary database writable path
+     * @param regionID region id
+     * @param callback completion/error callback
+     */
+    fun mergeTilepack(path: String, regionID: Long, callback: MergeOfflineRegionsCallback) {
+        val src = File(path)
+        Thread {
+            var errorMessage: String? = null
+            if (src.canWrite()) {
+                handler.post { // path writable, merge and update schema in place if necessary
+                    mergeTilepackFiles(src, regionID, callback, false)
+                }
+            } else if (src.canRead()) {
+                // path not writable, copy the the file to temp directory
+                val dst = File(FileSource.getInternalCachePath(context), src.name)
+                try {
+                    copyTempDatabaseFile(src, dst)
+                    handler.post { // merge and update schema using the copy
+                        mergeTilepackFiles(dst, regionID, callback, true)
                     }
                 } catch (ex: IOException) {
                     ex.printStackTrace()
@@ -390,27 +440,25 @@ class OfflineManager private constructor(context: Context) {
     }
 
     /**
-     * Sets the maximum size in bytes for the ambient cache.
+     * Sets the maximum size (number of resources) for the ambient cache.
      *
      * This call is potentially expensive because it will try
      * to trim the data in case the database is larger than the
      * size defined. The size of offline regions are not affected
      * by this settings, but the ambient cache will always try
-     * to not exceed the maximum size defined, taking into account
-     * the current size for the offline regions.
+     * to not exceed the maximum size defined.
      *
      * Note that if you use the SDK's offline functionality, your ability to set the ambient cache size will be limited.
      * Space that offline regions take up detract from the space available for ambient caching, and the ambient cache
-     * size does not block offline downloads. For example: if the maximum cache size is set to 50 MB and 40 MB are
-     * already used by offline regions, the ambient cache size will effectively be 10 MB.
+     * size does not block offline downloads.
      *
      * Setting the size to 0 will disable the cache if there is no
      * offline region on the database.
      *
      * This method should always be called at the start of an app, before setting the style and loading a map.
-     * Otherwise, the map will instantiate with the default cache size of 50 MB.
+     * Otherwise, the map will instantiate with the default cache size of 1000 resources.
      *
-     * @param size     the maximum size of the ambient cache
+     * @param size     the maximum number of resources of the ambient cache
      * @param callback the callback to be invoked when the the maximum size has been set or when the operation erred.
      */
     fun setMaximumAmbientCacheSize(size: Long, callback: FileSourceCallback?) {
@@ -459,6 +507,36 @@ class OfflineManager private constructor(context: Context) {
         mergeOfflineRegions(
             fileSource,
             file.absolutePath,
+            object : MergeOfflineRegionsCallback {
+                override fun onMerge(offlineRegions: Array<OfflineRegion>?) {
+                    if (isTemporaryFile) {
+                        file.delete()
+                    }
+                    handler.post {
+                        fileSource.deactivate()
+                        callback.onMerge(offlineRegions)
+                    }
+                }
+
+                override fun onError(error: String) {
+                    if (isTemporaryFile) {
+                        file.delete()
+                    }
+                    handler.post {
+                        fileSource.deactivate()
+                        callback.onError(error)
+                    }
+                }
+            }
+        )
+    }
+
+    private fun mergeTilepackFiles(file: File, regionID: Long, callback: MergeOfflineRegionsCallback, isTemporaryFile: Boolean) {
+        fileSource.activate()
+        mergeTilepack(
+            fileSource,
+            file.absolutePath,
+            regionID,
             object : MergeOfflineRegionsCallback {
                 override fun onMerge(offlineRegions: Array<OfflineRegion>?) {
                     if (isTemporaryFile) {
@@ -540,19 +618,6 @@ class OfflineManager private constructor(context: Context) {
     }
 
     /**
-     * Sets the maximum number of tiles that may be downloaded and stored on the current device.
-     * By default, the limit is set to 6,000.
-     *
-     * Once this limit is reached, [OfflineRegion.OfflineRegionObserver.mapboxTileCountLimitExceeded]
-     * fires every additional attempt to download additional tiles until already downloaded tiles are removed
-     * by calling [OfflineRegion.delete].
-     *
-     * @param limit the maximum number of tiles allowed to be downloaded
-     */
-    @Keep
-    external fun setOfflineMapboxTileCountLimit(limit: Long)
-
-    /**
      * Sets whether database file packing occurs automatically.
      * By default, the automatic database file packing is enabled.
      *
@@ -566,7 +631,6 @@ class OfflineManager private constructor(context: Context) {
      *
      * @param autopack flag setting the automatic database file packing.
      */
-
     @Keep
     external fun runPackDatabaseAutomatically(autopack: Boolean)
 
@@ -588,6 +652,9 @@ class OfflineManager private constructor(context: Context) {
 
     @Keep
     private external fun mergeOfflineRegions(fileSource: FileSource, path: String, callback: MergeOfflineRegionsCallback)
+
+    @Keep
+    private external fun mergeTilepack(fileSource: FileSource, path: String, regionID: Long, callback: MergeOfflineRegionsCallback)
 
     @Keep
     private external fun nativeResetDatabase(callback: FileSourceCallback?)

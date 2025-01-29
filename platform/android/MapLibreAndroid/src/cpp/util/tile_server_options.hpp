@@ -19,8 +19,6 @@ public:
 
     static jni::Local<jni::Object<TileServerOptions>> DefaultConfiguration(jni::JNIEnv&,
                                                                            const jni::Class<TileServerOptions>&);
-    static jni::Local<jni::Object<TileServerOptions>> MapboxConfiguration(jni::JNIEnv&,
-                                                                          const jni::Class<TileServerOptions>&);
     static jni::Local<jni::Object<TileServerOptions>> MapTilerConfiguration(jni::JNIEnv&,
                                                                             const jni::Class<TileServerOptions>&);
     static jni::Local<jni::Object<TileServerOptions>> MapLibreConfiguration(jni::JNIEnv&,

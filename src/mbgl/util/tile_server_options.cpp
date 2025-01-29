@@ -31,6 +31,8 @@ public:
     std::string apiKeyParameterName;
     bool apiKeyRequired;
 
+    bool useWalJournal;
+
     std::vector<mbgl::util::DefaultStyle> defaultStyles;
     std::string defaultStyle;
 };
@@ -192,6 +194,15 @@ bool TileServerOptions::requiresApiKey() const {
     return impl_->apiKeyRequired;
 }
 
+TileServerOptions& TileServerOptions::setUseWalJournal(bool useWalJournal) {
+    impl_->useWalJournal = useWalJournal;
+    return *this;
+}
+
+bool TileServerOptions::useWalJournal() const {
+    return impl_->useWalJournal;
+}
+
 const std::vector<mbgl::util::DefaultStyle> TileServerOptions::defaultStyles() const {
     return impl_->defaultStyles;
 }
@@ -229,34 +240,8 @@ TileServerOptions TileServerOptions::MapLibreConfiguration() {
                                     .withTileTemplate("/{path}", "tiles", {})
                                     .withDefaultStyles(styles)
                                     .withDefaultStyle("Basic")
-                                    .setRequiresApiKey(false);
-    return options;
-}
-
-//
-
-TileServerOptions TileServerOptions::MapboxConfiguration() {
-    std::vector<mbgl::util::DefaultStyle> styles{
-        mbgl::util::DefaultStyle("mapbox://styles/mapbox/streets-v11", "Streets", 11),
-        mbgl::util::DefaultStyle("mapbox://styles/mapbox/outdoors-v11", "Outdoors", 11),
-        mbgl::util::DefaultStyle("mapbox://styles/mapbox/light-v10", "Light", 10),
-        mbgl::util::DefaultStyle("mapbox://styles/mapbox/dark-v10", "Dark", 10),
-        mbgl::util::DefaultStyle("mapbox://styles/mapbox/satellite-v9", "Satellite", 9),
-        mbgl::util::DefaultStyle("mapbox://styles/mapbox/satellite-streets-v11", "Satellite Streets", 11)};
-
-    TileServerOptions options = TileServerOptions()
-                                    .withBaseURL("https://api.mapbox.com")
-                                    .withUriSchemeAlias("mapbox")
-                                    .withApiKeyParameterName("access_token")
-                                    .withSourceTemplate("/{domain}.json", "", {"/v4"})
-                                    .withStyleTemplate("/styles/v1{path}", "styles", {})
-                                    .withSpritesTemplate(
-                                        "/styles/v1{directory}{filename}/sprite{extension}", "sprites", {})
-                                    .withGlyphsTemplate("/fonts/v1{path}", "fonts", {})
-                                    .withTileTemplate("{path}", "tiles", {"/v4"})
-                                    .withDefaultStyles(styles)
-                                    .withDefaultStyle("Streets")
-                                    .setRequiresApiKey(true);
+                                    .setRequiresApiKey(false)
+                                    .setUseWalJournal(false);
     return options;
 }
 
@@ -281,7 +266,8 @@ TileServerOptions TileServerOptions::MapTilerConfiguration() {
                                     .withTileTemplate("{path}", "tiles", {})
                                     .withDefaultStyles(styles)
                                     .withDefaultStyle("Streets")
-                                    .setRequiresApiKey(true);
+                                    .setRequiresApiKey(true)
+                                    .setUseWalJournal(false);
     return options;
 }
 

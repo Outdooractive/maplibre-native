@@ -59,16 +59,6 @@ void OfflineRegion::setOfflineRegionObserver(jni::JNIEnv& env_,
             callback.Call(*env, method, OfflineRegionError::New(*env, error));
         }
 
-        void mapboxTileCountLimitExceeded(uint64_t limit) override {
-            // Reattach, the callback comes from a different thread
-            android::UniqueEnv env = android::AttachEnv();
-
-            static auto& javaClass = jni::Class<OfflineRegion::OfflineRegionObserver>::Singleton(*env);
-            static auto method = javaClass.GetMethod<void(jni::jlong)>(*env, "mapboxTileCountLimitExceeded");
-
-            callback.Call(*env, method, jlong(limit));
-        }
-
         jni::Global<jni::Object<OfflineRegion::OfflineRegionObserver>, jni::EnvAttachingDeleter> callback;
     };
 

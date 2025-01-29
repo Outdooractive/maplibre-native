@@ -152,7 +152,7 @@ const MLNExceptionName MLNRedundantSourceIdentifierException = @"MLNRedundantSou
 }
 
 - (void)setSources:(NSSet<__kindof MLNSource *> *)sources {
-    MLNLogDebug(@"Setting: %lu sources", sources.count);
+    MLNLogInfo(@"Setting: %lu sources", sources.count);
     for (MLNSource *source in self.sources) {
         [self removeSource:source];
     }
@@ -201,7 +201,7 @@ const MLNExceptionName MLNRedundantSourceIdentifierException = @"MLNRedundantSou
 
 - (void)addSource:(MLNSource *)source
 {
-    MLNLogDebug(@"Adding source: %@", source);
+    MLNLogInfo(@"Adding source: %@", source);
     if (!source.rawSource) {
         [NSException raise:NSInvalidArgumentException format:
          @"The source %@ cannot be added to the style. "
@@ -222,8 +222,8 @@ const MLNExceptionName MLNRedundantSourceIdentifierException = @"MLNRedundantSou
 }
 
 - (BOOL)removeSource:(MLNSource *)source error:(NSError * __nullable * __nullable)outError {
-    MLNLogDebug(@"Removing source: %@", source);
-    
+    MLNLogInfo(@"Removing source: %@", source);
+
     if (!source.rawSource) {
         NSString *errorMessage = [NSString stringWithFormat:
                                   @"The source %@ cannot be removed from the style. "
@@ -278,7 +278,7 @@ const MLNExceptionName MLNRedundantSourceIdentifierException = @"MLNRedundantSou
 }
 
 - (void)setLayers:(NSArray<__kindof MLNStyleLayer *> *)layers {
-    MLNLogDebug(@"Setting: %lu layers", layers.count);
+    MLNLogInfo(@"Setting: %lu layers", layers.count);
     for (MLNStyleLayer *layer in self.layers) {
         [self removeLayer:layer];
     }
@@ -379,7 +379,7 @@ const MLNExceptionName MLNRedundantSourceIdentifierException = @"MLNRedundantSou
 
 - (void)removeLayer:(MLNStyleLayer *)layer
 {
-    MLNLogDebug(@"Removing layer: %@", layer);
+    MLNLogInfo(@"Removing layer: %@", layer);
     if (!layer.rawLayer) {
         [NSException raise:NSInvalidArgumentException format:
          @"The style layer %@ cannot be removed from the style. "
@@ -393,7 +393,7 @@ const MLNExceptionName MLNRedundantSourceIdentifierException = @"MLNRedundantSou
 
 - (void)addLayer:(MLNStyleLayer *)layer
 {
-    MLNLogDebug(@"Adding layer: %@", layer);
+    MLNLogInfo(@"Adding layer: %@", layer);
     if (!layer.rawLayer) {
         [NSException raise:NSInvalidArgumentException format:
          @"The style layer %@ cannot be added to the style. "
@@ -415,7 +415,7 @@ const MLNExceptionName MLNRedundantSourceIdentifierException = @"MLNRedundantSou
 
 - (void)insertLayer:(MLNStyleLayer *)layer belowLayer:(MLNStyleLayer *)sibling
 {
-    MLNLogDebug(@"Inseting layer: %@ belowLayer: %@", layer, sibling);
+    MLNLogInfo(@"Inserting layer: %@ belowLayer: %@", layer, sibling);
     if (!layer.rawLayer) {
         [NSException raise:NSInvalidArgumentException
                     format:
@@ -440,7 +440,7 @@ const MLNExceptionName MLNRedundantSourceIdentifierException = @"MLNRedundantSou
 }
 
 - (void)insertLayer:(MLNStyleLayer *)layer aboveLayer:(MLNStyleLayer *)sibling {
-    MLNLogDebug(@"Inseting layer: %@ aboveLayer: %@", layer, sibling);
+    MLNLogInfo(@"Inserting layer: %@ aboveLayer: %@", layer, sibling);
     if (!layer.rawLayer) {
         [NSException raise:NSInvalidArgumentException
                     format:
@@ -494,7 +494,7 @@ const MLNExceptionName MLNRedundantSourceIdentifierException = @"MLNRedundantSou
 
 - (void)setImage:(MLNImage *)image forName:(NSString *)name
 {
-    MLNLogDebug(@"Setting image: %@ forName: %@", image, name);
+    MLNLogInfo(@"Setting image: %@ forName: %@", image, name);
     if (!image) {
         [NSException raise:NSInvalidArgumentException
                     format:@"Cannot assign nil image to “%@”.", name];
@@ -509,7 +509,7 @@ const MLNExceptionName MLNRedundantSourceIdentifierException = @"MLNRedundantSou
 
 - (void)removeImageForName:(NSString *)name
 {
-    MLNLogDebug(@"Removing imageForName: %@", name);
+    MLNLogInfo(@"Removing imageForName: %@", name);
     if (!name) {
         [NSException raise:NSInvalidArgumentException
                     format:@"Cannot remove image with nil name."];

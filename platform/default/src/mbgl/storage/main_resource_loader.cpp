@@ -8,6 +8,7 @@
 #include <mbgl/storage/resource_options.hpp>
 #include <mbgl/util/client_options.hpp>
 #include <mbgl/util/stopwatch.hpp>
+#include <mbgl/util/logging.hpp>
 #include <mbgl/util/thread.hpp>
 
 #include <cassert>
@@ -44,11 +45,16 @@ public:
             // Keep parent request alive while chained request is being processed.
             std::shared_ptr<AsyncRequest> parentKeepAlive = std::move(parent);
 
+            Log::Info(Event::HttpRequest, "Fetching resource from network, url=" + res.url);
+
             MBGL_TIMING_START(watch);
             return onlineFileSource->request(res, [=, ptr = parentKeepAlive, this](const Response& response) {
                 if (databaseFileSource) {
                     databaseFileSource->forward(res, response, nullptr);
                 }
+
+                Log::Info(Event::HttpRequest, "Network response size=" + std::to_string(response.data != nullptr ? response.data->size() : 0) + ", noContent=" + (response.noContent ? std::string("true") : std::string("false")) + ", notModified=" + (response.notModified ? std::string("true") : std::string("false")) + ", url=" + res.url);
+
                 if (res.kind == Resource::Kind::Tile) {
                     // onlineResponse.data will be null if data not modified
                     MBGL_TIMING_FINISH(watch,
@@ -69,36 +75,46 @@ public:
         if (assetFileSource && assetFileSource->canRequest(resource)) {
             // Asset request
             tasks[req] = assetFileSource->request(resource, callback);
+            Log::Info(Event::HttpRequest, "Fetching resource from assets, url=" + resource.url);
         } else if (mbtilesFileSource && mbtilesFileSource->canRequest(resource)) {
             // Local file request
             tasks[req] = mbtilesFileSource->request(resource, callback);
+            Log::Info(Event::HttpRequest, "Fetching resource from mbtiles, url=" + resource.url);
         } else if (pmtilesFileSource && pmtilesFileSource->canRequest(resource)) {
             // Local file request
             tasks[req] = pmtilesFileSource->request(resource, callback);
+            Log::Info(Event::HttpRequest, "Fetching resource from pmtiles, url=" + resource.url);
         } else if (localFileSource && localFileSource->canRequest(resource)) {
             // Local file request
             tasks[req] = localFileSource->request(resource, callback);
+            Log::Info(Event::HttpRequest, "Fetching resource from local file, url=" + resource.url);
         } else if (databaseFileSource && databaseFileSource->canRequest(resource)) {
             // Try cache only request if needed.
             if (resource.loadingMethod == Resource::LoadingMethod::CacheOnly) {
                 tasks[req] = databaseFileSource->request(resource, callback);
+                Log::Info(Event::HttpRequest, "Fetching resource from database, url=" + resource.url);
             } else {
                 // Cache request with fallback to network with cache control
                 tasks[req] = databaseFileSource->request(resource, [=, this](const Response& response) {
                     Resource res = resource;
 
-                    // Resource is in the cache
-                    if (!response.noContent) {
+                    // Resource is in the cache?
+                    if (response.noContent) {
+                        Log::Info(Event::HttpRequest, "Not in database - fallback to network, url=" + resource.url);
+                    }
+                    else {
+                        // OA update: Always use offline resources if available
+                        Log::Info(Event::HttpRequest, "Got resource from database, isUsable=" + (response.isUsable() ? std::string("true") : std::string("false")) + ", url=" + resource.url);
+                        callback(response);
+
                         if (response.isUsable()) {
-                            callback(response);
                             // Set the priority of existing resource to low if it's expired but usable.
                             res.setPriority(Resource::Priority::Low);
-                        } else {
-                            // Set prior data only if it was not returned to
-                            // the requester. Once we get 304 response from
-                            // the network, we will forward response to the
-                            // requester.
-                            res.priorData = response.data;
+
+                            // OA update: Early exit when the resource exists and is usable
+                            // Tiles automatically use the database first and exit if available
+                            // (see tile_loader_impl.hpp)
+                            return;
                         }
 
                         // Copy response fields for cache control request

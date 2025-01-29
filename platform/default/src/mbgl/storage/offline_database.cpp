@@ -10,6 +10,9 @@
 
 #include <mbgl/storage/offline_schema.hpp>
 #include <mbgl/storage/merge_sideloaded.hpp>
+#include <mbgl/storage/merge_tilepack.hpp>
+
+#include <algorithm>
 
 namespace mbgl {
 
@@ -67,6 +70,9 @@ void OfflineDatabase::initialize() {
             migrateToVersion6();
             // fall through
         case 6:
+            migrateToVersion7();
+            // fall through
+        case 7:
             // Happy path; we're done
             return;
         default:
@@ -77,7 +83,7 @@ void OfflineDatabase::initialize() {
 }
 
 void OfflineDatabase::changePath(const std::string& path_) {
-    Log::Info(Event::Database, "Changing the database path.");
+    Log::Info(Event::Database, "Changing the database path to " + path_);
     cleanup();
     path = path_;
     initialize();
@@ -137,8 +143,6 @@ void OfflineDatabase::handleError(const char* action) {
         handleError(ex, action);
     } catch (const util::IOException& ex) {
         handleError(ex, action);
-    } catch (const MapboxTileLimitExceededException&) {
-        throw; // This is ours and must be handled on client side.
     } catch (const std::runtime_error& ex) {
         handleError(ex, action);
     } catch (...) {
@@ -148,7 +152,7 @@ void OfflineDatabase::handleError(const char* action) {
 }
 
 void OfflineDatabase::removeExisting() {
-    Log::Warning(Event::Database, "Removing existing incompatible offline database");
+    Log::Warning(Event::Database, "Removing existing offline database");
 
     statements.clear();
     db.reset();
@@ -169,11 +173,25 @@ void OfflineDatabase::createSchema() {
     checkFlags();
 
     vacuum();
-    db->exec("PRAGMA journal_mode = DELETE");
-    db->exec("PRAGMA synchronous = FULL");
+
+    if (tileServerOptions.useWalJournal()) {
+        Log::Info(Event::Database, "Using journal_mode=WAL in the offline db");
+        db->exec("PRAGMA journal_mode = WAL");
+        db->exec("PRAGMA synchronous = NORMAL");
+        db->exec("PRAGMA temp_store = MEMORY");
+    }
+    else {
+        Log::Info(Event::Database, "Using journal_mode=DELETE in the offline db");
+        db->exec("PRAGMA journal_mode = DELETE");
+        db->exec("PRAGMA synchronous = FULL");
+    }
+
+    db->exec("PRAGMA auto_vacuum = INCREMENTAL");
+    db->exec("PRAGMA page_size = 4096"); // Actually the default
+
     mapbox::sqlite::Transaction transaction(*db);
     db->exec(offlineDatabaseSchema);
-    db->exec("PRAGMA user_version = 6");
+    db->exec("PRAGMA user_version = 7");
     transaction.commit();
 }
 
@@ -215,6 +233,16 @@ void OfflineDatabase::migrateToVersion6() {
     transaction.commit();
 }
 
+void OfflineDatabase::migrateToVersion7() {
+    assert(db);
+    checkFlags();
+
+    // There is no evident change between v6 and v7
+    mapbox::sqlite::Transaction transaction(*db);
+    db->exec("PRAGMA user_version = 7");
+    transaction.commit();
+}
+
 void OfflineDatabase::vacuum() {
     assert(db);
     checkFlags();
@@ -225,6 +253,9 @@ void OfflineDatabase::vacuum() {
     } else {
         db->exec("PRAGMA incremental_vacuum");
     }
+
+    db->exec("PRAGMA wal_checkpoint(TRUNCATE)"); // Does nothing if WAL is not enabled
+    db->exec("PRAGMA optimize");
 }
 
 void OfflineDatabase::checkFlags() {
@@ -313,10 +344,8 @@ std::pair<bool, uint64_t> OfflineDatabase::putInternal(const Resource& resource,
         size = compressed ? compressedData.size() : response.data->size();
     }
 
-    std::optional<DatabaseSizeChangeStats> stats;
     if (evict_) {
-        stats = DatabaseSizeChangeStats(this);
-        if (!evict(size, *stats)) {
+        if (!evict(1, true)) {
             Log::Info(Event::Database, "Unable to make space for entry");
             return {false, 0};
         }
@@ -341,8 +370,8 @@ std::pair<bool, uint64_t> OfflineDatabase::putInternal(const Resource& resource,
                                compressed);
     }
 
-    if (stats) {
-        updateAmbientCacheSize(*stats);
+    if (inserted && currentAmbientCacheSize) {
+        *currentAmbientCacheSize += 1;
     }
 
     return {inserted, size};
@@ -746,8 +775,10 @@ std::exception_ptr OfflineDatabase::clearAmbientCache() try {
     // clang-format off
     mapbox::sqlite::Query tileQuery{ getStatement(
         "DELETE FROM tiles "
-        "WHERE id NOT IN ("
-        "    SELECT tile_id FROM region_tiles"
+        "WHERE id IN ("
+        "   SELECT id FROM tiles"
+        "   EXCEPT"
+        "   SELECT tile_id FROM region_tiles"
         ")"
     ) };
     // clang-format on
@@ -757,13 +788,17 @@ std::exception_ptr OfflineDatabase::clearAmbientCache() try {
     // clang-format off
     mapbox::sqlite::Query resourceQuery{ getStatement(
         "DELETE FROM resources "
-        "WHERE id NOT IN ("
-        "    SELECT resource_id FROM region_resources"
+        "WHERE id IN ("
+        "   SELECT id FROM resources"
+        "   EXCEPT"
+        "   SELECT resource_id FROM region_resources"
         ")"
     ) };
     // clang-format on
 
     resourceQuery.run();
+
+    currentAmbientCacheSize.reset();
 
     if (autopack) vacuum();
 
@@ -892,37 +927,14 @@ expected<OfflineRegions, std::exception_ptr> OfflineDatabase::mergeDatabase(cons
         return unexpected<std::exception_ptr>(std::current_exception());
     }
     try {
-        // Support sideloaded databases at user_version = 6. Future schema
+        // Support sideloaded databases at user_version = 7. Future schema
         // version changes will need to implement migration paths for sideloaded
-        // databases at version 6.
+        // databases at version 7.
         auto sideUserVersion = static_cast<int>(getPragma<int64_t>("PRAGMA side.user_version"));
         const auto mainUserVersion = getPragma<int64_t>("PRAGMA user_version");
-        if (sideUserVersion < 6 || sideUserVersion != mainUserVersion) {
+        if (sideUserVersion < 7 || sideUserVersion != mainUserVersion) {
             throw std::runtime_error("Merge database has incorrect user_version");
         }
-
-        auto currentTileCount = getOfflineMapboxTileCount();
-        // clang-format off
-         mapbox::sqlite::Query queryTiles{ getStatement(
-            "SELECT COUNT(DISTINCT st.id) "
-            "FROM side.tiles st "
-            //only consider region tiles, and not ambient tiles.
-            "JOIN side.region_tiles srt ON srt.tile_id = st.id "
-            "LEFT JOIN tiles t ON st.url_template = t.url_template AND "
-                "st.pixel_ratio = t.pixel_ratio AND "
-                "st.z = t.z AND "
-                "st.x = t.x AND "
-                "st.y = t.y "
-            "WHERE t.id IS NULL "
-            "AND st.url_template LIKE ?1 || '%'") };
-        // clang-format on
-        queryTiles.bind(1, tileServerOptions.uriSchemeAlias() + "://");
-        queryTiles.run();
-        auto countOfTilesToMerge = queryTiles.get<int64_t>(0);
-        if ((countOfTilesToMerge + currentTileCount) > offlineMapboxTileCountLimit) {
-            throw MapboxTileLimitExceededException();
-        }
-        queryTiles.reset();
 
         mapbox::sqlite::Transaction transaction(*db);
         db->exec(mergeSideloadedDatabaseSQL);
@@ -955,6 +967,82 @@ expected<OfflineRegions, std::exception_ptr> OfflineDatabase::mergeDatabase(cons
     return {};
 }
 
+expected<OfflineRegions, std::exception_ptr>
+OfflineDatabase::mergeTilepack(const std::string& sideDatabasePath, const int64_t regionID) {
+    checkFlags();
+
+    try {
+        // clang-format off
+        mapbox::sqlite::Query query{ getStatement("ATTACH DATABASE ?1 AS side") };
+        // clang-format on
+
+        query.bind(1, sideDatabasePath);
+        query.run();
+    } catch (const mapbox::sqlite::Exception& ex) {
+        Log::Error(Event::Database, static_cast<int>(ex.code), "Can't attach database (" + sideDatabasePath + ") for merge: " + ex.what());
+        return unexpected<std::exception_ptr>(std::current_exception());
+    }
+
+    // Tilepacks always have one region containing all resources/tiles.
+    try {
+        // clang-format off
+        mapbox::sqlite::Query query{ getStatement(
+            "CREATE TEMPORARY TABLE region_mapping AS "
+            "  SELECT 1 AS side_region_id, ?1 AS main_region_id"
+        )};
+        // clang-format on
+
+        query.bind(1, regionID);
+        query.run();
+    } catch (const mapbox::sqlite::Exception& ex) {
+        Log::Error(Event::Database, static_cast<int>(ex.code), std::string("Can't create a necessary temp table for merge: ") + ex.what());
+        return unexpected<std::exception_ptr>(std::current_exception());
+    }
+
+    try {
+        // Support sideloaded databases at user_version = 7. Future schema version
+        // changes will need to implement migration paths for sideloaded databases at
+        // version 7.
+        auto sideUserVersion = static_cast<int>(getPragma<int64_t>("PRAGMA side.user_version"));
+        const auto mainUserVersion = getPragma<int64_t>("PRAGMA user_version");
+        if (sideUserVersion < 7 || sideUserVersion != mainUserVersion) {
+            throw std::runtime_error("Tilepack has incorrect user_version");
+        }
+
+        mapbox::sqlite::Transaction transaction(*db);
+        db->exec(mergeTilepackDatabaseSQL);
+        transaction.commit();
+
+        // clang-format off
+        mapbox::sqlite::Query queryRegions{ getStatement(
+            "SELECT DISTINCT r.id, r.definition, r.description "
+            "FROM side.regions sr "
+            "JOIN regions r ON sr.definition = r.definition  AND sr.description IS r.description"
+        )};
+        // clang-format on
+
+        OfflineRegions result;
+        while (queryRegions.run()) {
+            // Construct, then move because this constructor is private.
+            OfflineRegion region(queryRegions.get<int64_t>(0),
+                                 decodeOfflineRegionDefinition(queryRegions.get<std::string>(1)),
+                                 queryRegions.get<std::vector<uint8_t>>(2));
+            result.emplace_back(std::move(region));
+        }
+
+        db->exec("DETACH DATABASE side");
+        // Explicit move to avoid triggering the copy constructor.
+        return { std::move(result) };
+    } catch (const std::runtime_error& ex) {
+        db->exec("DETACH DATABASE side");
+        Log::Error(Event::Database, ex.what());
+
+        return unexpected<std::exception_ptr>(std::current_exception());
+    }
+
+    return {};
+}
+
 expected<OfflineRegionMetadata, std::exception_ptr> OfflineDatabase::updateMetadata(
     const int64_t regionID, const OfflineRegionMetadata& metadata) try {
     checkFlags();
@@ -983,14 +1071,12 @@ std::exception_ptr OfflineDatabase::deleteRegion(OfflineRegion&& region) try {
         query.run();
     }
 
-    DatabaseSizeChangeStats stats(this);
-    evict(0, stats);
+    currentAmbientCacheSize.reset();
+    evict(0, true);
+
     assert(db);
     if (autopack) vacuum();
-    updateAmbientCacheSize(stats);
 
-    // Ensure that the cached offlineTileCount value is recalculated.
-    offlineMapboxTileCount = std::nullopt;
     return nullptr;
 } catch (...) {
     handleError("delete region");
@@ -1048,18 +1134,12 @@ void OfflineDatabase::putRegionResources(int64_t regionID,
         const auto& resource = std::get<0>(elem);
         const auto& response = std::get<1>(elem);
 
-        try {
-            uint64_t resourceSize = putRegionResourceInternal(regionID, resource, response);
-            completedResourceCount++;
-            completedResourceSize += resourceSize;
-            if (resource.kind == Resource::Kind::Tile) {
-                completedTileCount += 1;
-                completedTileSize += resourceSize;
-            }
-        } catch (const MapboxTileLimitExceededException&) {
-            // Commit the rest of the batch and rethrow
-            transaction.commit();
-            throw;
+        uint64_t resourceSize = putRegionResourceInternal(regionID, resource, response);
+        completedResourceCount++;
+        completedResourceSize += resourceSize;
+        if (resource.kind == Resource::Kind::Tile) {
+            completedTileCount += 1;
+            completedTileSize += resourceSize;
         }
     }
 
@@ -1080,16 +1160,7 @@ uint64_t OfflineDatabase::putRegionResourceInternal(int64_t regionID,
     checkFlags();
 
     uint64_t size = putInternal(resource, response, false).second;
-    bool previouslyUnused = markUsed(regionID, resource);
-
-    if (previouslyUnused && exceedsOfflineMapboxTileCountLimit(resource)) {
-        throw MapboxTileLimitExceededException();
-    }
-
-    if (offlineMapboxTileCount && resource.kind == Resource::Kind::Tile &&
-        util::mapbox::isCanonicalURL(tileServerOptions, resource.url) && previouslyUnused) {
-        *offlineMapboxTileCount += 1;
-    }
+    markUsed(regionID, resource);
 
     return size;
 }
@@ -1236,23 +1307,23 @@ T OfflineDatabase::getPragma(const char* sql) {
     return query.get<T>(0);
 }
 
-// Remove least-recently used resources and tiles until the used database size,
-// as calculated by multiplying the number of in-use pages by the page size, is
+// Remove least-recently used resources and tiles until the used size is
 // less than the maximum cache size. Returns false if this condition cannot be
 // satisfied.
-//
-// SQLite database never shrinks in size unless we call VACUUM. We here
-// are monitoring the soft limit (i.e. number of free pages in the file)
-// and as it approaches to the hard limit (i.e. the actual file size) we
-// delete an arbitrary number of old cache entries. The free pages approach
-// saves us from calling VACUUM or keeping a running total, which can be costly.
-bool OfflineDatabase::evict(uint64_t neededFreeSize, DatabaseSizeChangeStats& stats) {
+bool OfflineDatabase::evict(uint64_t neededFreeSize, bool limitNumberOfResourcesToDelete) {
     checkFlags();
     uint64_t ambientCacheSize = (initAmbientCacheSize() == nullptr) ? *currentAmbientCacheSize
                                                                     : maximumAmbientCacheSize;
-    uint64_t newAmbientCacheSize = ambientCacheSize + neededFreeSize + stats.pageSize();
+    uint64_t newAmbientCacheSize = ambientCacheSize + neededFreeSize;
 
-    while (newAmbientCacheSize > maximumAmbientCacheSize) {
+    if (newAmbientCacheSize > maximumAmbientCacheSize) {
+        uint64_t resourcesToDelete = (newAmbientCacheSize - maximumAmbientCacheSize) + 100;
+        if (limitNumberOfResourcesToDelete) {
+            // Don't delete more than 200 elements to prevent hangs
+            resourcesToDelete = std::min(uint64_t(200), resourcesToDelete);
+        }
+        Log::Info(Event::Database, "evict ambient cache, new = " + std::to_string(newAmbientCacheSize) + ", maximum = " + std::to_string(maximumAmbientCacheSize) + ", removing " + std::to_string(resourcesToDelete));
+
         // clang-format off
         mapbox::sqlite::Query accessedQuery{ getStatement(
             "SELECT max(accessed) "
@@ -1271,7 +1342,7 @@ bool OfflineDatabase::evict(uint64_t neededFreeSize, DatabaseSizeChangeStats& st
             "  ORDER BY accessed ASC LIMIT ?1 "
             ") "
         ) };
-        accessedQuery.bind(1, 50);
+        accessedQuery.bind(1, int(resourcesToDelete));
         // clang-format on
         if (!accessedQuery.run()) {
             return false;
@@ -1308,15 +1379,15 @@ bool OfflineDatabase::evict(uint64_t neededFreeSize, DatabaseSizeChangeStats& st
         tileQuery.run();
         const uint64_t tileChanges = tileQuery.changes();
 
-        // Update current ambient cache size, based on how many bytes were released.
-        newAmbientCacheSize = std::max<int64_t>(
-            static_cast<int64_t>(newAmbientCacheSize) - static_cast<int64_t>(stats.bytesReleased()), 0u);
+        Log::Info(Event::Database, "evict ambient cache, removed " + std::to_string(resourceChanges) + " resources, " + std::to_string(tileChanges) + " tiles");
 
         // The cached value of offlineTileCount does not need to be updated
         // here because only non-offline tiles can be removed by eviction.
         if (resourceChanges == 0 && tileChanges == 0) {
             return false;
         }
+
+        currentAmbientCacheSize.reset();
     }
 
     return true;
@@ -1327,38 +1398,15 @@ std::exception_ptr OfflineDatabase::initAmbientCacheSize() {
         try {
             // clang-format off
             mapbox::sqlite::Query query{ getStatement(
-            "SELECT SUM(data) "
+            "SELECT SUM(count) "
             "FROM ( "
-            "    SELECT SUM(IFNULL(LENGTH(data), 0) "
-            "               + IFNULL(LENGTH(id), 0) "
-            "               + IFNULL(LENGTH(url_template), 0) "
-            "               + IFNULL(LENGTH(pixel_ratio), 0) "
-            "               + IFNULL(LENGTH(x), 0) "
-            "               + IFNULL(LENGTH(y), 0) "
-            "               + IFNULL(LENGTH(z), 0) "
-            "               + IFNULL(LENGTH(expires), 0) "
-            "               + IFNULL(LENGTH(modified), 0) "
-            "               + IFNULL(LENGTH(etag), 0) "
-            "               + IFNULL(LENGTH(compressed), 0) "
-            "               + IFNULL(LENGTH(accessed), 0) "
-            "               + IFNULL(LENGTH(must_revalidate), 0) "
-            "               ) as data "
+            "    SELECT count(*) AS count "
             "    FROM tiles "
             "    LEFT JOIN region_tiles "
             "    ON tile_id = tiles.id "
             "    WHERE tile_id IS NULL "
             "  UNION ALL "
-            "    SELECT SUM(IFNULL(LENGTH(data), 0) "
-            "               + IFNULL(LENGTH(id), 0) "
-            "               + IFNULL(LENGTH(url), 0) "
-            "               + IFNULL(LENGTH(kind), 0) "
-            "               + IFNULL(LENGTH(expires), 0) "
-            "               + IFNULL(LENGTH(modified), 0) "
-            "               + IFNULL(LENGTH(etag), 0) "
-            "               + IFNULL(LENGTH(compressed), 0) "
-            "               + IFNULL(LENGTH(accessed), 0) "
-            "               + IFNULL(LENGTH(must_revalidate), 0) "
-            "               ) as data "
+            "    SELECT count(*) AS count "
             "    FROM resources "
             "    LEFT JOIN region_resources "
             "    ON resource_id = resources.id "
@@ -1387,10 +1435,8 @@ std::exception_ptr OfflineDatabase::setMaximumAmbientCacheSize(uint64_t size) {
         maximumAmbientCacheSize = size;
 
         if (*currentAmbientCacheSize > maximumAmbientCacheSize) {
-            DatabaseSizeChangeStats stats(this);
-            evict(0, stats);
+            evict(0, false);
             if (autopack) vacuum();
-            updateAmbientCacheSize(stats);
         }
 
         return nullptr;
@@ -1399,50 +1445,6 @@ std::exception_ptr OfflineDatabase::setMaximumAmbientCacheSize(uint64_t size) {
         handleError("set maximum ambient cache size");
         return std::current_exception();
     }
-}
-
-void OfflineDatabase::setOfflineMapboxTileCountLimit(uint64_t limit) {
-    offlineMapboxTileCountLimit = limit;
-}
-
-uint64_t OfflineDatabase::getOfflineMapboxTileCountLimit() {
-    return offlineMapboxTileCountLimit;
-}
-
-bool OfflineDatabase::offlineMapboxTileCountLimitExceeded() {
-    return getOfflineMapboxTileCount() >= offlineMapboxTileCountLimit;
-}
-
-uint64_t OfflineDatabase::getOfflineMapboxTileCount() try {
-    // Calculating this on every call would be much simpler than caching and
-    // manually updating the value, but it would make offline downloads an O(n²)
-    // operation, because the database query below involves an index scan of
-    // region_tiles.
-
-    if (offlineMapboxTileCount) {
-        return *offlineMapboxTileCount;
-    }
-
-    // clang-format off
-    mapbox::sqlite::Query query{ getStatement(
-        "SELECT COUNT(DISTINCT id) "
-        "FROM region_tiles, tiles "
-        "WHERE tile_id = tiles.id "
-        "AND url_template LIKE ?1 || '%'") };
-    // clang-format on
-    query.bind(1, tileServerOptions.uriSchemeAlias() + "://");
-    query.run();
-
-    offlineMapboxTileCount = query.get<int64_t>(0);
-    return *offlineMapboxTileCount;
-} catch (...) {
-    handleError("get offline Mapbox tile count");
-    return std::numeric_limits<uint64_t>::max();
-}
-
-bool OfflineDatabase::exceedsOfflineMapboxTileCountLimit(const Resource& resource) {
-    return resource.kind == Resource::Kind::Tile && util::mapbox::isCanonicalURL(tileServerOptions, resource.url) &&
-           offlineMapboxTileCountLimitExceeded();
 }
 
 void OfflineDatabase::markUsedResources(int64_t regionID, const std::list<Resource>& resources) try {
@@ -1484,36 +1486,6 @@ void OfflineDatabase::reopenDatabaseReadOnly(bool readOnly_) {
         initialize();
     } catch (...) {
         handleError("reopen database read-only");
-    }
-}
-
-OfflineDatabase::DatabaseSizeChangeStats::DatabaseSizeChangeStats(OfflineDatabase* db_)
-    : db(db_) {
-    assert(db);
-    pageSize_ = db->getPragma<int64_t>("PRAGMA page_size");
-    pageCount_ = db->getPragma<int64_t>("PRAGMA page_count");
-    initialSize_ = pageSize_ * (pageCount_ - db->getPragma<int64_t>("PRAGMA freelist_count"));
-}
-
-uint64_t OfflineDatabase::DatabaseSizeChangeStats::pageSize() const {
-    return pageSize_;
-}
-
-int64_t OfflineDatabase::DatabaseSizeChangeStats::diff() const {
-    const int64_t currentSize = static_cast<int64_t>(pageSize_) * (db->getPragma<int64_t>("PRAGMA page_count") -
-                                                                   db->getPragma<int64_t>("PRAGMA freelist_count"));
-    return currentSize - static_cast<int64_t>(initialSize_);
-}
-
-uint64_t OfflineDatabase::DatabaseSizeChangeStats::bytesReleased() const {
-    uint64_t currentSize = pageSize_ * (pageCount_ - db->getPragma<int64_t>("PRAGMA freelist_count"));
-    return std::max<int64_t>(initialSize_ - currentSize, 0u);
-}
-
-void OfflineDatabase::updateAmbientCacheSize(DatabaseSizeChangeStats& stats) {
-    assert(currentAmbientCacheSize);
-    if (currentAmbientCacheSize) {
-        *currentAmbientCacheSize = std::max<int64_t>(static_cast<int64_t>(*currentAmbientCacheSize) + stats.diff(), 0u);
     }
 }
 
