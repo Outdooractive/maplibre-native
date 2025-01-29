@@ -290,6 +290,9 @@ const double MLNMinimumZoomLevelForUserTracking = 10.5;
 /// Initial zoom level when entering user tracking mode from a low zoom level.
 const double MLNDefaultZoomLevelForUserTracking = 15.0;
 
+/// Tolerance for snapping to true north, measured in degrees in either direction.
+const CLLocationDirection MLNToleranceForSnappingToNorth = 7;
+
 /// Distance threshold to stop the camera while animating.
 const CLLocationDistance MLNDistanceThresholdForCameraPause = 500;
 
