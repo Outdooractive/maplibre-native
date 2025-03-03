@@ -310,7 +310,7 @@ void Transform::flyTo(const CameraOptions& inputCamera,
         duration = *animation.duration;
     } else {
         /// V: Average velocity, measured in ρ-screenfuls per second.
-        double velocity = 1.2;
+        double velocity = 3;
         if (animation.velocity) {
             velocity = *animation.velocity / rho;
         }
