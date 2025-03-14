@@ -4,27 +4,12 @@
 
 namespace mbgl {
     extern NSURL *resourceURL(const Resource& resource);
-    extern BOOL isValidMapboxEndpoint(NSURL *url);
 }
 
 @interface MLNResourceTests : XCTestCase
 @end
 
 @implementation MLNResourceTests
-
-- (void)testValidEndpoints {
-    using namespace mbgl;
-
-    XCTAssertTrue(isValidMapboxEndpoint([NSURL URLWithString:@"https://mapbox.com"]));
-    XCTAssertTrue(isValidMapboxEndpoint([NSURL URLWithString:@"https://mapbox.cn"]));
-    XCTAssertTrue(isValidMapboxEndpoint([NSURL URLWithString:@"https://example.mapbox.com"]));
-    XCTAssertTrue(isValidMapboxEndpoint([NSURL URLWithString:@"https://example.mapbox.cn"]));
-
-    XCTAssertFalse(isValidMapboxEndpoint([NSURL URLWithString:@"https://example.com"]));
-    XCTAssertFalse(isValidMapboxEndpoint([NSURL URLWithString:@"https://example.cn"]));
-    XCTAssertFalse(isValidMapboxEndpoint([NSURL URLWithString:@"https://examplemapbox.com"]));
-    XCTAssertFalse(isValidMapboxEndpoint([NSURL URLWithString:@"https://examplemapbox.cn"]));
-}
 
 - (void)internalTestOfflineQueryParameterIsAddedForOfflineResource:(std::string)testURL {
 
@@ -77,12 +62,7 @@ namespace mbgl {
 }
 
 - (void)testOfflineQueryParameterIsAddedForOfflineResource {
-    std::string testURL = "test://mapbox.com/testing_offline_query?a=one&b=two";
-    [self internalTestOfflineQueryParameterIsAddedForOfflineResource:testURL];
-}
-
-- (void)testOfflineQueryParameterIsAddedForOfflineResourceForChina {
-    std::string testURL = "test://mapbox.cn/testing_offline_query?a=one&b=two";
+    std::string testURL = "test://outdooractive.com/testing_offline_query?a=one&b=two";
     [self internalTestOfflineQueryParameterIsAddedForOfflineResource:testURL];
 }
 
