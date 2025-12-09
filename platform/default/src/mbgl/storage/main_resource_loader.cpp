@@ -117,6 +117,13 @@ public:
                             // (see tile_loader_impl.hpp)
                             return;
                         }
+                        else {
+                            // Set prior data only if it was not returned to
+                            // the requester. Once we get 304 response from
+                            // the network, we will forward response to the
+                            // requester.
+                            res.priorData = response.data;
+                        }
 
                         // Copy response fields for cache control request
                         res.priorModified = response.modified;
