@@ -132,7 +132,7 @@ void TileLoader<T>::loadFromCache() {
                     resource.priorEtag = res.etag;
                     resource.priorData = res.data;
                 } else {
-                    Log::Info(Event::HttpRequest, "TileLoader: found, isUsable=" + (res.isUsable() ? std::string("true") : std::string("false")) + ", url=" + std::string(resource.url));
+                    Log::Info(Event::HttpRequest, "TileLoader: found, isUsable=" + (res.isUsable() ? std::string("true") : std::string("false")) + ", must-revalidate=" + (res.mustRevalidate ? std::string("true") : std::string("false")) + ", url=" + std::string(resource.url));
                     loadedData(res, Resource::LoadingMethod::CacheOnly);
                 }
 
