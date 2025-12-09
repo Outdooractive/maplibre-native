@@ -105,7 +105,7 @@ public:
                     else {
                         Log::Info(Event::HttpRequest, "Got resource from database, isUsable=" + (response.isUsable() ? std::string("true") : std::string("false")) + ", must-revalidate=" + (response.mustRevalidate ? std::string("true") : std::string("false")) + ", url=" + resource.url);
 
-                        if (response.isUsable() && !response.mustRevalidate) {
+                        if (response.isUsable()) {
                             // OA update: Always use offline resources if available
                             callback(response);
 
