@@ -288,6 +288,9 @@ std::unique_ptr<AsyncRequest> HTTPFileSource::request(const Resource& resource, 
 
         assert(session);
 
+        if ([networkManager.delegate respondsToSelector:@selector(willSendRequest:)]) {
+            req = [networkManager.delegate willSendRequest:req];
+        }
         if (session.configuration.HTTPAdditionalHeaders[@"User-Agent"] == nil) {
             [req addValue:impl->userAgent forHTTPHeaderField:@"User-Agent"];
         }
