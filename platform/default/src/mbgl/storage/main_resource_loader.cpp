@@ -112,10 +112,13 @@ public:
                             // Set the priority of existing resource to low if it's expired but usable.
                             res.setPriority(Resource::Priority::Low);
 
-                            // OA update: Early exit when the resource exists and is usable
+                            // OA update: Early exit when the resource exists, is usable
+                            // and not expired.
                             // Tiles automatically use the database first and exit if available
                             // (see tile_loader_impl.hpp)
-                            return;
+                            if (response.isFresh()) {
+                                return;
+                            }
                         }
                         else {
                             // Set prior data only if it was not returned to
