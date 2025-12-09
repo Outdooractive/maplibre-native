@@ -103,11 +103,12 @@ public:
                         Log::Info(Event::HttpRequest, "Not in database - fallback to network, url=" + resource.url);
                     }
                     else {
-                        // OA update: Always use offline resources if available
-                        Log::Info(Event::HttpRequest, "Got resource from database, isUsable=" + (response.isUsable() ? std::string("true") : std::string("false")) + ", url=" + resource.url);
-                        callback(response);
+                        Log::Info(Event::HttpRequest, "Got resource from database, isUsable=" + (response.isUsable() ? std::string("true") : std::string("false")) + ", must-revalidate=" + (response.mustRevalidate ? std::string("true") : std::string("false")) + ", url=" + resource.url);
 
-                        if (response.isUsable()) {
+                        if (response.isUsable() && !response.mustRevalidate) {
+                            // OA update: Always use offline resources if available
+                            callback(response);
+
                             // Set the priority of existing resource to low if it's expired but usable.
                             res.setPriority(Resource::Priority::Low);
 

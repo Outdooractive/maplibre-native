@@ -32,12 +32,17 @@ public:
             offlineResponse->error = std::make_unique<Response::Error>(Response::Error::Reason::NotFound,
                                                                        "Not found in offline database");
         } else if (!offlineResponse->isUsable()) {
-            Log::Info(Event::Database, "Cached resource is marked as unusable/expired, but using it anyway.");
-
             // OA improvement: We never want to not use available resources in the database
+            // unless they are required to revalidate
             // TODO: Check how resources get updated
-//            offlineResponse->error = std::make_unique<Response::Error>(Response::Error::Reason::NotFound,
-//                                                                       "Cached resource is unusable");
+            if (offlineResponse->mustRevalidate) {
+                Log::Info(Event::Database, "Cached resource is marked as must-revalidate, not using it.");
+                offlineResponse->error = std::make_unique<Response::Error>(Response::Error::Reason::NotFound,
+                                                                           "Cached resource is unusable");
+            }
+            else {
+                Log::Info(Event::Database, "Cached resource is marked as unusable/expired, but using it anyway.");
+            }
         }
         req.invoke(&FileSourceRequest::setResponse, *offlineResponse);
     }
