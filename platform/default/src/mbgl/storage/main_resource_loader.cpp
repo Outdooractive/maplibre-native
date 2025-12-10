@@ -53,7 +53,7 @@ public:
                     databaseFileSource->forward(res, response, nullptr);
                 }
 
-                Log::Info(Event::HttpRequest, "Network response size=" + std::to_string(response.data != nullptr ? response.data->size() : 0) + ", noContent=" + (response.noContent ? std::string("true") : std::string("false")) + ", notModified=" + (response.notModified ? std::string("true") : std::string("false")) + ", url=" + res.url);
+                Log::Info(Event::HttpRequest, "Network response, size=" + std::to_string(response.data != nullptr ? response.data->size() : 0) + ", noContent=" + (response.noContent ? std::string("true") : std::string("false")) + ", notModified=" + (response.notModified ? std::string("true") : std::string("false")) + ", must-revalidate=" + (response.mustRevalidate ? std::string("true") : std::string("false")) + ", expires=" + (response.expires ? util::iso8601(*response.expires) : std::string("n/a")) + " UTC, url=" + res.url);
 
                 if (res.kind == Resource::Kind::Tile) {
                     // onlineResponse.data will be null if data not modified
@@ -103,7 +103,7 @@ public:
                         Log::Info(Event::HttpRequest, "Not in database - fallback to network, url=" + resource.url);
                     }
                     else {
-                        Log::Info(Event::HttpRequest, "Got resource from database, isUsable=" + (response.isUsable() ? std::string("true") : std::string("false")) + ", must-revalidate=" + (response.mustRevalidate ? std::string("true") : std::string("false")) + ", url=" + resource.url);
+                        Log::Info(Event::HttpRequest, "Got resource from database, isUsable=" + (response.isUsable() ? std::string("true") : std::string("false")) + ", must-revalidate=" + (response.mustRevalidate ? std::string("true") : std::string("false")) + ", expires=" + (response.expires ? util::iso8601(*response.expires) : std::string("n/a")) + " UTC, url=" + resource.url);
 
                         if (response.isUsable()) {
                             // OA update: Always use offline resources if available

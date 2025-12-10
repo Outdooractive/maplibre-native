@@ -37,16 +37,16 @@ public:
             // unless they are required to revalidate
             // TODO: Check how resources get updated
             if (offlineResponse->mustRevalidate) {
-                Log::Info(Event::Database, "Cached resource is marked as must-revalidate, not using it, url=" + resource.url);
+                Log::Info(Event::Database, "Cached resource is marked as must-revalidate -> not using it, expires=" + (offlineResponse->expires ? util::iso8601(*offlineResponse->expires) : std::string("n/a")) + " UTC, url=" + resource.url);
                 offlineResponse->error = std::make_unique<Response::Error>(Response::Error::Reason::NotFound,
                                                                            "Cached resource is unusable");
             }
             else {
-                Log::Info(Event::Database, "Cached resource is marked as unusable/expired, but using it anyway, url=" + resource.url);
+                Log::Info(Event::Database, "Cached resource is marked as unusable/expired, but using it anyway, expires=" + (offlineResponse->expires ? util::iso8601(*offlineResponse->expires) : std::string("n/a")) + " UTC, url=" + resource.url);
             }
         }
         else {
-            Log::Info(Event::Database, "Cached resource is usable, url=" + resource.url);
+            Log::Info(Event::Database, "Cached resource is usable, expires=" + (offlineResponse->expires ? util::iso8601(*offlineResponse->expires) : std::string("n/a")) + " UTC, url=" + resource.url);
         }
         req.invoke(&FileSourceRequest::setResponse, *offlineResponse);
     }
