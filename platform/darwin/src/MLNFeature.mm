@@ -336,7 +336,9 @@ MLN_DEFINE_FEATURE_ATTRIBUTES_GETTER();
     featureCollection.reserve(self.shapes.count);
     for (MLNShape <MLNFeature> *feature in self.shapes) {
         auto geoJSONObject = feature.geoJSONObject;
-        MLNAssert(geoJSONObject.is<mbgl::GeoJSONFeature>(), @"Feature collection must only contain features.");
+        if (!geoJSONObject.is<mbgl::GeoJSONFeature>()) {
+            continue;
+        }
         featureCollection.push_back(geoJSONObject.get<mbgl::GeoJSONFeature>());
     }
     return featureCollection;

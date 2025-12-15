@@ -36,10 +36,6 @@ OfflineManager::OfflineManager(jni::JNIEnv& env, const jni::Object<FileSource>& 
 
 OfflineManager::~OfflineManager() {}
 
-void OfflineManager::setOfflineMapboxTileCountLimit(jni::JNIEnv&, jni::jlong limit) {
-    fileSource->setOfflineMapboxTileCountLimit(limit);
-}
-
 void OfflineManager::listOfflineRegions(jni::JNIEnv& env_,
                                         const jni::Object<FileSource>& jFileSource_,
                                         const jni::Object<ListOfflineRegionsCallback>& callback_) {
@@ -158,6 +154,31 @@ void OfflineManager::mergeOfflineRegions(jni::JNIEnv& env_,
         });
 }
 
+void OfflineManager::mergeTilepack(jni::JNIEnv& env_, const jni::Object<FileSource>& jFileSource_,
+                                   const jni::String& jString_, const jni::jlong regionID_,
+                                   const jni::Object<MergeOfflineRegionsCallback>& callback_) {
+    auto globalCallback = jni::NewGlobal<jni::EnvAttachingDeleter>(env_, callback_);
+    auto globalFilesource = jni::NewGlobal<jni::EnvAttachingDeleter>(env_, jFileSource_);
+
+    auto path = jni::Make<std::string>(env_, jString_);
+    fileSource->mergeTilepack(path, regionID_, [
+        //Keep a shared ptr to a global reference of the callback and file source so they are not GC'd in the meanwhile
+        callback = std::make_shared<decltype(globalCallback)>(std::move(globalCallback)),
+        jFileSource = std::make_shared<decltype(globalFilesource)>(std::move(globalFilesource))
+    ](mbgl::expected<mbgl::OfflineRegions, std::exception_ptr> regions) mutable {
+        // Reattach, the callback comes from a different thread
+        android::UniqueEnv env = android::AttachEnv();
+
+        if (regions) {
+            OfflineManager::MergeOfflineRegionsCallback::onMerge(
+                    *env, *jFileSource, *callback, *regions);
+        } else {
+            OfflineManager::MergeOfflineRegionsCallback::onError(
+                    *env, *callback, regions.error());
+        }
+    });
+}
+
 void OfflineManager::resetDatabase(jni::JNIEnv& env_, const jni::Object<FileSourceCallback>& callback_) {
     auto globalCallback = jni::NewGlobal<jni::EnvAttachingDeleter>(env_, callback_);
 
@@ -252,11 +273,11 @@ void OfflineManager::registerNative(jni::JNIEnv& env) {
         jni::MakePeer<OfflineManager, const jni::Object<FileSource>&>,
         "initialize",
         "finalize",
-        METHOD(&OfflineManager::setOfflineMapboxTileCountLimit, "setOfflineMapboxTileCountLimit"),
         METHOD(&OfflineManager::listOfflineRegions, "listOfflineRegions"),
         METHOD(&OfflineManager::getOfflineRegion, "getOfflineRegion"),
         METHOD(&OfflineManager::createOfflineRegion, "createOfflineRegion"),
         METHOD(&OfflineManager::mergeOfflineRegions, "mergeOfflineRegions"),
+        METHOD(&OfflineManager::mergeTilepack, "mergeTilepack"),
         METHOD(&OfflineManager::resetDatabase, "nativeResetDatabase"),
         METHOD(&OfflineManager::packDatabase, "nativePackDatabase"),
         METHOD(&OfflineManager::invalidateAmbientCache, "nativeInvalidateAmbientCache"),

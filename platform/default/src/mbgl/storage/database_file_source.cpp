@@ -31,9 +31,22 @@ public:
             offlineResponse->noContent = true;
             offlineResponse->error = std::make_unique<Response::Error>(Response::Error::Reason::NotFound,
                                                                        "Not found in offline database");
-        } else if (!offlineResponse->isUsable()) {
-            offlineResponse->error = std::make_unique<Response::Error>(Response::Error::Reason::NotFound,
-                                                                       "Cached resource is unusable");
+        }
+        else if (!offlineResponse->isUsable()) {
+            // OA improvement: We never want to not use available resources in the database
+            // unless they are required to revalidate
+            // TODO: Check how resources get updated
+            if (offlineResponse->mustRevalidate) {
+                Log::Info(Event::Database, "Cached resource is marked as must-revalidate -> not using it, expires=" + (offlineResponse->expires ? util::iso8601(*offlineResponse->expires) : std::string("n/a")) + " UTC, url=" + resource.url);
+                offlineResponse->error = std::make_unique<Response::Error>(Response::Error::Reason::NotFound,
+                                                                           "Cached resource is unusable");
+            }
+            else {
+                Log::Info(Event::Database, "Cached resource is marked as unusable/expired, but using it anyway, expires=" + (offlineResponse->expires ? util::iso8601(*offlineResponse->expires) : std::string("n/a")) + " UTC, url=" + resource.url);
+            }
+        }
+        else {
+            Log::Info(Event::Database, "Cached resource is usable, expires=" + (offlineResponse->expires ? util::iso8601(*offlineResponse->expires) : std::string("n/a")) + " UTC, url=" + resource.url);
         }
         req.invoke(&FileSourceRequest::setResponse, *offlineResponse);
     }
@@ -92,6 +105,12 @@ public:
         callback(db->mergeDatabase(sideDatabasePath));
     }
 
+    void mergeTilepack(const std::string& sideDatabasePath,
+                       const int64_t regionID,
+                       const std::function<void(expected<OfflineRegions, std::exception_ptr>)>& callback) {
+        callback(db->mergeTilepack(sideDatabasePath, regionID));
+    }
+
     void updateMetadata(const int64_t regionID,
                         const OfflineRegionMetadata& metadata,
                         const std::function<void(expected<OfflineRegionMetadata, std::exception_ptr>)>& callback) {
@@ -127,8 +146,6 @@ public:
             download.value()->setState(state);
         }
     }
-
-    void setOfflineMapboxTileCountLimit(uint64_t limit) { db->setOfflineMapboxTileCountLimit(limit); }
 
     void reopenDatabaseReadOnly(bool readOnly) { db->reopenDatabaseReadOnly(readOnly); }
 
@@ -287,6 +304,14 @@ void DatabaseFileSource::mergeOfflineRegions(
     impl->actor().invoke(&DatabaseFileSourceThread::mergeOfflineRegions, sideDatabasePath, std::move(callback));
 }
 
+void DatabaseFileSource::mergeTilepack(
+    const std::string& sideDatabasePath,
+    const int64_t regionID,
+    std::function<void(expected<OfflineRegions, std::exception_ptr>)> callback)
+{
+    impl->actor().invoke(&DatabaseFileSourceThread::mergeTilepack, sideDatabasePath, regionID, std::move(callback));
+}
+
 void DatabaseFileSource::updateOfflineMetadata(
     const int64_t regionID,
     const OfflineRegionMetadata& metadata,
@@ -317,10 +342,6 @@ void DatabaseFileSource::getOfflineRegionStatus(
     const OfflineRegion& region,
     std::function<void(expected<OfflineRegionStatus, std::exception_ptr>)> callback) const {
     impl->actor().invoke(&DatabaseFileSourceThread::getRegionStatus, region.getID(), std::move(callback));
-}
-
-void DatabaseFileSource::setOfflineMapboxTileCountLimit(uint64_t limit) const {
-    impl->actor().invoke(&DatabaseFileSourceThread::setOfflineMapboxTileCountLimit, limit);
 }
 
 void DatabaseFileSource::setProperty(const std::string& key, const mapbox::base::Value& value) {

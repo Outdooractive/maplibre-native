@@ -5,6 +5,7 @@
 #include <mbgl/tile/tile_loader.hpp>
 #include <mbgl/util/async_request.hpp>
 #include <mbgl/util/tileset.hpp>
+#include <mbgl/util/logging.hpp>
 
 #include <cassert>
 
@@ -118,6 +119,8 @@ void TileLoader<T>::loadFromCache() {
                 tile.setTriedCache();
 
                 if (res.error && res.error->reason == Response::Error::Reason::NotFound) {
+                    Log::Info(Event::HttpRequest, "TileLoader: tile not found, url=" + std::string(resource.url));
+
                     // When the cache-only request could not be satisfied, don't treat
                     // it as an error. A cache lookup could still return data, _and_ an
                     // error, in particular when we were able to find the data, but it
@@ -129,10 +132,12 @@ void TileLoader<T>::loadFromCache() {
                     resource.priorEtag = res.etag;
                     resource.priorData = res.data;
                 } else {
+                    Log::Info(Event::HttpRequest, "TileLoader: found, isUsable=" + (res.isUsable() ? std::string("true") : std::string("false")) + ", must-revalidate=" + (res.mustRevalidate ? std::string("true") : std::string("false")) + ", expires=" + (res.expires ? util::iso8601(*res.expires) : std::string("n/a")) + " UTC, url=" + std::string(resource.url));
                     loadedData(res, Resource::LoadingMethod::CacheOnly);
                 }
 
                 if (necessity == TileNecessity::Required) {
+                    Log::Info(Event::HttpRequest, "TileLoader: tile required -> network, url=" + std::string(resource.url));
                     loadFromNetwork();
                 }
                 break;

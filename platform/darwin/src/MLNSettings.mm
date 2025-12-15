@@ -116,9 +116,6 @@
         case MLNMapLibre:
             [MLNSettings setTileServerOptionsInternal:mbgl::TileServerOptions::MapLibreConfiguration()];
             break;
-        case MLNMapbox:
-            [MLNSettings setTileServerOptionsInternal:mbgl::TileServerOptions::MapboxConfiguration()];
-            break;
         default:
             [MLNSettings setTileServerOptionsInternal:mbgl::TileServerOptions::DefaultConfiguration()];
     }
@@ -227,6 +224,12 @@
 
     return nil;
 
+}
+
++ (void)setUseWalJournal:(BOOL)useWalJournal {
+    auto tileServerOptions = [MLNSettings sharedSettings].tileServerOptionsInternal;
+
+    [MLNSettings sharedSettings].tileServerOptionsInternal = &tileServerOptions->setUseWalJournal(useWalJournal);
 }
 
 @end

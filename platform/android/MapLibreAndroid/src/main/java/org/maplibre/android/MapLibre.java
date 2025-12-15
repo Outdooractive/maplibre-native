@@ -8,6 +8,7 @@ import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.UiThread;
+import org.maplibre.android.util.TileServerOptionsConfigurator;
 import timber.log.Timber;
 
 import org.maplibre.android.constants.MapLibreConstants;
@@ -52,7 +53,7 @@ public final class MapLibre {
    */
   @UiThread
   @NonNull
-  public static synchronized MapLibre getInstance(@NonNull Context context) {
+  public static synchronized MapLibre getInstance(@NonNull Context context, @Nullable TileServerOptionsConfigurator tileServerOptionsConfigurator) {
     ThreadUtils.init(context);
     ThreadUtils.checkThread(TAG);
     if (INSTANCE == null) {
@@ -63,6 +64,9 @@ public final class MapLibre {
     }
 
     TileServerOptions tileServerOptions = TileServerOptions.get(WellKnownTileServer.MapLibre);
+    if (tileServerOptionsConfigurator != null) {
+      tileServerOptions = tileServerOptionsConfigurator.configure(tileServerOptions);
+    }
     INSTANCE.tileServerOptions = tileServerOptions;
     INSTANCE.apiKey = null;
     FileSource fileSource = FileSource.getInstance(context);
@@ -89,7 +93,8 @@ public final class MapLibre {
   @UiThread
   @NonNull
   public static synchronized MapLibre getInstance(@NonNull Context context, @Nullable String apiKey,
-                                                  WellKnownTileServer tileServer) {
+                                                  WellKnownTileServer tileServer,
+                                                  @Nullable TileServerOptionsConfigurator tileServerOptionsConfigurator) {
     ThreadUtils.init(context);
     ThreadUtils.checkThread(TAG);
     if (INSTANCE == null) {
@@ -103,6 +108,9 @@ public final class MapLibre {
     }
 
     TileServerOptions tileServerOptions = TileServerOptions.get(tileServer);
+    if (tileServerOptionsConfigurator != null) {
+      tileServerOptions = tileServerOptionsConfigurator.configure(tileServerOptions);
+    }
     INSTANCE.tileServerOptions = tileServerOptions;
     FileSource fileSource = FileSource.getInstance(context);
     fileSource.setTileServerOptions(tileServerOptions);

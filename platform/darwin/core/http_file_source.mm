@@ -212,20 +212,19 @@ HTTPFileSource::HTTPFileSource(const ResourceOptions& resourceOptions, const Cli
 HTTPFileSource::~HTTPFileSource() = default;
 
 MLN_APPLE_EXPORT
-BOOL isValidMapboxEndpoint(NSURL *url) {
-    return ([url.host isEqualToString:@"mapbox.com"] ||
-            [url.host hasSuffix:@".mapbox.com"] ||
-            [url.host isEqualToString:@"mapbox.cn"] ||
-            [url.host hasSuffix:@".mapbox.cn"]);
+BOOL isValidOutdooractiveEndpoint(NSURL *url) {
+    return ([url.host isEqualToString:@"outdooractive.com"] ||
+            [url.host hasSuffix:@".outdooractive.com"] ||
+            [url.host isEqualToString:@"oastatic.com"] ||
+            [url.host hasSuffix:@".oastatic.com"]);
 }
 
 MLN_APPLE_EXPORT
 NSURL *resourceURL(const Resource& resource) {
-
     NSURL *url = [NSURL URLWithString:@(resource.url.c_str())];
 
 #if TARGET_OS_IPHONE || TARGET_OS_SIMULATOR
-    if (isValidMapboxEndpoint(url)) {
+    if (isValidOutdooractiveEndpoint(url)) {
         NSURLComponents *components = [NSURLComponents componentsWithURL:url resolvingAgainstBaseURL:NO];
         NSMutableArray *queryItems = [NSMutableArray array];
 
@@ -268,8 +267,6 @@ std::unique_ptr<AsyncRequest> HTTPFileSource::request(const Resource& resource, 
             [req setValue:rangeHeader forHTTPHeaderField:@"Range"];
         }
 
-        [req addValue:impl->userAgent forHTTPHeaderField:@"User-Agent"];
-
         const bool isTile = resource.kind == mbgl::Resource::Kind::Tile;
 
         if (isTile) {
@@ -293,6 +290,9 @@ std::unique_ptr<AsyncRequest> HTTPFileSource::request(const Resource& resource, 
 
         if ([networkManager.delegate respondsToSelector:@selector(willSendRequest:)]) {
             req = [networkManager.delegate willSendRequest:req];
+        }
+        if (session.configuration.HTTPAdditionalHeaders[@"User-Agent"] == nil) {
+            [req addValue:impl->userAgent forHTTPHeaderField:@"User-Agent"];
         }
 
         request->task = [session
