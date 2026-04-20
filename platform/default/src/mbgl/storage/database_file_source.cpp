@@ -26,6 +26,15 @@ public:
         std::optional<Response> offlineResponse = (resource.storagePolicy != Resource::StoragePolicy::Volatile)
                                                       ? db->get(resource)
                                                       : std::nullopt;
+        if (!offlineResponse && resource.storagePolicy != Resource::StoragePolicy::Volatile) {
+            std::string url = resource.url;
+            size_t webpPos = url.rfind(".webp");
+            if (webpPos != std::string::npos) {
+                Resource alternateResource = resource;
+                alternateResource.url = url.substr(0, webpPos) + ".png" + url.substr(webpPos + 5);
+                offlineResponse = db->get(alternateResource);
+            }
+        }
         if (!offlineResponse) {
             offlineResponse.emplace();
             offlineResponse->noContent = true;
