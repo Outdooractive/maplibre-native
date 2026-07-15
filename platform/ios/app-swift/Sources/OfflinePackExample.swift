@@ -26,7 +26,6 @@ class OfflinePackExample: UIViewController, MLNMapViewDelegate {
         // Setup offline pack notification handlers.
         NotificationCenter.default.addObserver(self, selector: #selector(offlinePackProgressDidChange), name: NSNotification.Name.MLNOfflinePackProgressChanged, object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(offlinePackDidReceiveError), name: NSNotification.Name.MLNOfflinePackError, object: nil)
-        NotificationCenter.default.addObserver(self, selector: #selector(offlinePackDidReceiveMaximumAllowedMapboxTiles), name: NSNotification.Name.MLNOfflinePackMaximumMapboxTilesReached, object: nil)
     }
 
     func mapViewDidFinishLoadingMap(_: MLNMapView) {
@@ -117,15 +116,6 @@ class OfflinePackExample: UIViewController, MLNMapViewDelegate {
            let error = notification.userInfo?[MLNOfflinePackUserInfoKey.error] as? NSError
         {
             print("Offline pack “\(userInfo.name)” received error: \(error.localizedFailureReason ?? "unknown error")")
-        }
-    }
-
-    @objc func offlinePackDidReceiveMaximumAllowedMapboxTiles(notification: NSNotification) {
-        if let pack = notification.object as? MLNOfflinePack,
-           let userInfo = try? jsonDecoder.decode(UserData.self, from: pack.context),
-           let maximumCount = (notification.userInfo?[MLNOfflinePackUserInfoKey.maximumCount] as AnyObject).uint64Value
-        {
-            print("Offline pack “\(userInfo.name)” reached limit of \(maximumCount) tiles.")
         }
     }
 }

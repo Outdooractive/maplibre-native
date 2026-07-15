@@ -47,21 +47,6 @@ FOUNDATION_EXTERN MLN_EXPORT const NSNotificationName MLNOfflinePackProgressChan
 FOUNDATION_EXTERN MLN_EXPORT const NSNotificationName MLNOfflinePackErrorNotification;
 
 /**
- Posted by the shared ``MLNOfflineStorage`` object when the maximum number of
- tiles has been downloaded and stored on the current device.
-
- The `object` is the ``MLNOfflinePack`` object that reached the tile limit in the
- course of downloading. The `userInfo` dictionary contains the tile limit in the
- ``MLNOfflinePackUserInfoKeyMaximumCount`` key.
-
- Once this limit is reached, no instance of ``MLNOfflinePack`` can download
- additional tiles until already downloaded tiles are removed by
- calling the ``MLNOfflineStorage/removePack:withCompletionHandler:`` method.
- */
-FOUNDATION_EXTERN MLN_EXPORT const NSNotificationName
-    MLNOfflinePackMaximumMapboxTilesReachedNotification;
-
-/**
  A key in the `userInfo` property of a notification posted by ``MLNOfflinePack``.
  */
 typedef NSString *MLNOfflinePackUserInfoKey NS_EXTENSIBLE_STRING_ENUM;
@@ -90,16 +75,6 @@ FOUNDATION_EXTERN MLN_EXPORT const MLNOfflinePackUserInfoKey MLNOfflinePackUserI
  ``MLNErrorDomain``. See ``MLNErrorDomain`` for possible error codes.
  */
 FOUNDATION_EXTERN MLN_EXPORT const MLNOfflinePackUserInfoKey MLNOfflinePackUserInfoKeyError;
-
-/**
- The key for an `NSNumber` object that indicates the maximum number of
-  tiles that may be downloaded and stored on the current device.
- This key is used in the `userInfo` dictionary of an
- ``MLNOfflinePackMaximumMapboxTilesReachedNotification`` notification. Call
- `-unsignedLongLongValue` on the object to receive the `uint64_t`-typed tile
- limit.
- */
-FOUNDATION_EXTERN MLN_EXPORT const MLNOfflinePackUserInfoKey MLNOfflinePackUserInfoKeyMaximumCount;
 
 FOUNDATION_EXTERN MLN_EXPORT MLNExceptionName const MLNUnsupportedRegionTypeException;
 
@@ -269,6 +244,25 @@ MLN_EXPORT
 - (void)addContentsOfURL:(NSURL *)fileURL
     withCompletionHandler:(nullable MLNBatchedOfflinePackAdditionCompletionHandler)completion;
 
+/**
+ Adds the tilepack located at the given URL to offline storage.
+
+ The file must be a valid tilepack database bundled with the application or
+ downloaded separately.
+
+ The resulting packs are updated to the shared offline storage object’s
+ `packs` property, then the `completion` block is executed.
+
+ @param fileURL A file URL specifying the file to add. The URL should be a valid
+ system path.
+ @param completion The completion handler to call once the contents of the given
+ file has been added to offline storage. This handler is executed
+ asynchronously on the main queue.
+ */
+- (void)addContentsOfTilepack:(NSURL *)fileURL
+                toOfflinePack:(MLNOfflinePack* )offlinePack
+        withCompletionHandler:(MLNBatchedOfflinePackAdditionCompletionHandler)completion;
+
 // MARK: - Managing Offline Packs
 
 /**
@@ -371,19 +365,6 @@ MLN_EXPORT
 - (void)reloadPacks;
 
 /**
- Sets the maximum number of tiles that may be downloaded and
- stored on the current device.
-
- Once this limit is reached, an
- ``MLNOfflinePackMaximumMapboxTilesReachedNotification`` is posted for every
- attempt to download additional tiles until already downloaded tiles are removed
- by calling the ``MLNOfflineStorage/removePack:withCompletionHandler:`` method.
-
- @param maximumCount The maximum number of tiles allowed to be downloaded.
- */
-- (void)setMaximumAllowedMapboxTiles:(uint64_t)maximumCount;
-
-/**
  The cumulative size, measured in bytes, of all downloaded resources on disk.
 
  The returned value includes all resources, including tiles, whether downloaded
@@ -394,15 +375,10 @@ MLN_EXPORT
 // MARK: - Managing the Ambient Cache
 
 /**
- Sets the maximum ambient cache size in bytes. The default maximum cache
- size is 50 MB. To disable ambient caching, set the maximum ambient cache size
- to `0`. Setting the maximum ambient cache size does not impact the maximum size
+ Sets the maximum ambient cache size in number of entries (tiles or resources). The
+ default maximum cache size is 1000 entries. To disable ambient caching, set the maximum
+ ambient cache size to `0`. Setting the maximum ambient cache size does not impact the maximum size
  of offline packs.
-
- This method does not limit the space available to offline packs, and data in
- offline packs does not count towards this limit. If you set the maximum ambient
- cache size to 30 MB then download 20 MB of offline packs, 30 MB will remain
- available for the ambient cache.
 
  This method should be called before the map and map style have been loaded.
 
@@ -410,7 +386,7 @@ MLN_EXPORT
  in order to prevent the ambient cache from being larger than the
  specified amount.
 
- @param cacheSize The maximum size in bytes for the ambient cache.
+ @param cacheSize The maximum size (number of resources) for the ambient cache.
  @param completion The completion handler to call once the maximum ambient cache
     size has been set. This handler is executed synchronously on the main queue.
  */
@@ -452,6 +428,16 @@ MLN_EXPORT
  been reset. This handler is executed asynchronously on the main queue.
  */
 - (void)resetDatabaseWithCompletionHandler:(void (^)(NSError *_Nullable error))completion;
+
+/**
+ Sets whether packing the database file occurs automatically after an offline
+ region is deleted (deleteOfflineRegion()) or the ambient cache is cleared
+ (clearAmbientCache()).
+
+ By default, packing is enabled. If disabled, disk space will not be freed
+ after resources are removed unless packDatabase() is explicitly called.
+ */
+- (void)runPackDatabaseAutomatically:(BOOL)autopack;
 
 /**
  Inserts the provided resource into the ambient cache.

@@ -225,7 +225,7 @@ FOUNDATION_EXTERN MLN_EXPORT const MLNExpressionInterpolationMode
  @return An initialized expression equivalent to `object`, suitable for use as
     the value of a style layer attribute.
  */
-+ (instancetype)expressionWithMLNJSONObject:(id)object NS_SWIFT_NAME(init(mglJSONObject:));
++ (instancetype)expressionWithMLNJSONObject:(id)object NS_SWIFT_NAME(init(mlnJSONObject:));
 
 /**
  An equivalent Foundation object that can be serialized as JSON.

@@ -275,7 +275,7 @@ const NSTimeInterval MLNAnimationDuration = 0.3;
 
 /// Duration of an animation due to a user location update, typically chosen to
 /// match a typical interval between user location updates.
-const NSTimeInterval MLNUserLocationAnimationDuration = 1.0;
+const NSTimeInterval MLNUserLocationAnimationDuration = 0.3;
 
 /// Distance between the map view’s edge and that of the user location
 /// annotation view.
@@ -288,10 +288,12 @@ const CGFloat MLNMinimumZoom = 3;
 const double MLNMinimumZoomLevelForUserTracking = 10.5;
 
 /// Initial zoom level when entering user tracking mode from a low zoom level.
-const double MLNDefaultZoomLevelForUserTracking = 14.0;
+const double MLNDefaultZoomLevelForUserTracking = 15.0;
 
 /// Distance threshold to stop the camera while animating.
 const CLLocationDistance MLNDistanceThresholdForCameraPause = 500;
+
+const CLLocationDirection MLNToleranceForSnappingToNorth = 7;
 
 /// Rotation threshold while a pinch gesture is occurring.
 static NSString *const MLNRotationThresholdWhileZoomingKey = @"MLNRotationThresholdWhileZooming";

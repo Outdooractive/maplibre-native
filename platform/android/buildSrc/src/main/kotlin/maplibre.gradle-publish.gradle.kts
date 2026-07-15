@@ -162,3 +162,16 @@ androidComponents.onVariants { variant ->
         }
     }
 }
+
+// Note: The following was left after a rebase and might be unnecessary/break things
+signing {
+    sign(publishing.publications)
+}
+
+/// OA Changes
+tasks {
+    withType<Sign> {
+        onlyIf { !project.hasProperty("skip.signing") }
+    }
+}
+///

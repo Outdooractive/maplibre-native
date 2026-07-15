@@ -105,8 +105,6 @@ public:
     OfflineManager(jni::JNIEnv&, const jni::Object<FileSource>&);
     ~OfflineManager();
 
-    void setOfflineMapboxTileCountLimit(jni::JNIEnv&, jni::jlong limit);
-
     void listOfflineRegions(jni::JNIEnv&,
                             const jni::Object<FileSource>&,
                             const jni::Object<ListOfflineRegionsCallback>& callback);
@@ -126,6 +124,12 @@ public:
                              const jni::Object<FileSource>&,
                              const jni::String&,
                              const jni::Object<MergeOfflineRegionsCallback>&);
+
+    void mergeTilepack(jni::JNIEnv&,
+                       const jni::Object<FileSource>&,
+                       const jni::String&,
+                       const jni::jlong regionID,
+                       const jni::Object<MergeOfflineRegionsCallback>&);
 
     void putResourceWithUrl(jni::JNIEnv&,
                             const jni::String& url,

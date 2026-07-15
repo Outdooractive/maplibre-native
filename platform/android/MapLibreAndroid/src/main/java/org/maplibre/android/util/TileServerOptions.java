@@ -72,6 +72,8 @@ public class TileServerOptions implements Parcelable {
   @Keep
   private boolean apiKeyRequired;
   @Keep
+  private boolean useWalJournal;
+  @Keep
   private String defaultStyle;
   @Keep
   private DefaultStyle[] defaultStyles;
@@ -98,6 +100,7 @@ public class TileServerOptions implements Parcelable {
    * @param tileVersionPrefix    the tile version prefix
    * @param apiKeyParameterName  the name of api key parameter
    * @param apiKeyRequired       indicates if API key is required
+   * @param useWalJournal        indicates if the offline db should be initialized with journal_mode = WAL
    * @param defaultStyle         the name of the default style
    * @param defaultStyles        the list of default styles
    */
@@ -122,6 +125,7 @@ public class TileServerOptions implements Parcelable {
           @Nullable String tileVersionPrefix,
           String apiKeyParameterName,
           boolean apiKeyRequired,
+          boolean useWalJournal,
           String defaultStyle,
           DefaultStyle[] defaultStyles
   ) {
@@ -146,6 +150,7 @@ public class TileServerOptions implements Parcelable {
     setDefaultStyles(defaultStyles);
     setDefaultStyle(defaultStyle);
     setApiKeyRequired(apiKeyRequired);
+    setUseWalJournal(useWalJournal);
   }
 
   public void setBaseURL(String baseURL) {
@@ -300,6 +305,14 @@ public class TileServerOptions implements Parcelable {
     return this.apiKeyRequired;
   }
 
+  public void setUseWalJournal(boolean useWalJournal) {
+    this.useWalJournal = useWalJournal;
+  }
+
+  public boolean useWalJournal() {
+    return this.useWalJournal;
+  }
+
   public void setDefaultStyles(DefaultStyle[] defaultStyles) {
     this.defaultStyles = defaultStyles;
   }
@@ -351,6 +364,7 @@ public class TileServerOptions implements Parcelable {
     setTileVersionPrefix(in.readString());
     setApiKeyParameterName(in.readString());
     setApiKeyRequired(in.readByte() != 0);
+    setUseWalJournal(in.readByte() != 0);
     setDefaultStyle(in.readString());
     in.createTypedArray(DefaultStyle.CREATOR);
   }
@@ -382,14 +396,13 @@ public class TileServerOptions implements Parcelable {
     out.writeString(tileVersionPrefix);
     out.writeString(apiKeyParameterName);
     out.writeByte((byte) (apiKeyRequired ? 1 : 0));
+    out.writeByte((byte) (useWalJournal ? 1 : 0));
     out.writeString(defaultStyle);
     out.writeTypedArray(defaultStyles, 0);
   }
 
   public static TileServerOptions get(WellKnownTileServer tileServer) {
     switch (tileServer) {
-      case Mapbox:
-        return mapboxConfiguration();
       case MapTiler:
         return mapTilerConfiguration();
       case MapLibre:
@@ -402,10 +415,6 @@ public class TileServerOptions implements Parcelable {
   @Keep
   @NonNull
   private static native TileServerOptions defaultConfiguration();
-
-  @Keep
-  @NonNull
-  private static native TileServerOptions mapboxConfiguration();
 
   @Keep
   @NonNull

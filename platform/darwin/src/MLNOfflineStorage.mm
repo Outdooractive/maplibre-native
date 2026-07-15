@@ -33,13 +33,9 @@ static NSString *const MLNOfflineStorageFileName3_2_0_beta_1 = @"offline.db";
 const NSNotificationName MLNOfflinePackProgressChangedNotification =
     @"MLNOfflinePackProgressChanged";
 const NSNotificationName MLNOfflinePackErrorNotification = @"MLNOfflinePackError";
-const NSNotificationName MLNOfflinePackMaximumMapboxTilesReachedNotification =
-    @"MLNOfflinePackMaximumMapboxTilesReached";
-
 const MLNOfflinePackUserInfoKey MLNOfflinePackUserInfoKeyState = @"State";
 const MLNOfflinePackUserInfoKey MLNOfflinePackUserInfoKeyProgress = @"Progress";
 const MLNOfflinePackUserInfoKey MLNOfflinePackUserInfoKeyError = @"Error";
-const MLNOfflinePackUserInfoKey MLNOfflinePackUserInfoKeyMaximumCount = @"MaximumCount";
 
 const MLNExceptionName MLNUnsupportedRegionTypeException = @"MLNUnsupportedRegionTypeException";
 
@@ -49,7 +45,6 @@ const MLNExceptionName MLNUnsupportedRegionTypeException = @"MLNUnsupportedRegio
 @property (nonatomic) std::shared_ptr<mbgl::DatabaseFileSource> mbglDatabaseFileSource;
 @property (nonatomic) std::shared_ptr<mbgl::FileSource> mbglOnlineFileSource;
 @property (nonatomic) std::shared_ptr<mbgl::FileSource> mbglFileSource;
-@property (nonatomic, getter=isPaused) BOOL paused;
 @end
 
 @implementation MLNOfflineStorage {
@@ -62,16 +57,6 @@ const MLNExceptionName MLNUnsupportedRegionTypeException = @"MLNUnsupportedRegio
   static MLNOfflineStorage *sharedOfflineStorage;
   dispatch_once(&onceToken, ^{
     sharedOfflineStorage = [[self alloc] init];
-#if TARGET_OS_IPHONE || TARGET_OS_SIMULATOR
-    [[NSNotificationCenter defaultCenter] addObserver:sharedOfflineStorage
-                                             selector:@selector(unpauseFileSource:)
-                                                 name:UIApplicationWillEnterForegroundNotification
-                                               object:nil];
-    [[NSNotificationCenter defaultCenter] addObserver:sharedOfflineStorage
-                                             selector:@selector(pauseFileSource:)
-                                                 name:UIApplicationDidEnterBackgroundNotification
-                                               object:nil];
-#endif
     [sharedOfflineStorage reloadPacks];
   });
 
@@ -84,28 +69,6 @@ const MLNExceptionName MLNUnsupportedRegionTypeException = @"MLNUnsupportedRegio
 
   return sharedOfflineStorage;
 }
-
-#if TARGET_OS_IPHONE || TARGET_OS_SIMULATOR
-- (void)pauseFileSource:(__unused NSNotification *)notification {
-  if (self.isPaused) {
-    return;
-  }
-
-  _mbglOnlineFileSource->pause();
-  _mbglDatabaseFileSource->pause();
-  self.paused = YES;
-}
-
-- (void)unpauseFileSource:(__unused NSNotification *)notification {
-  if (!self.isPaused) {
-    return;
-  }
-
-  _mbglOnlineFileSource->resume();
-  _mbglDatabaseFileSource->resume();
-  self.paused = NO;
-}
-#endif
 
 - (void)setDelegate:(id<MLNOfflineStorageDelegate>)newValue {
   MLNLogDebug(@"Setting delegate: %@", newValue);

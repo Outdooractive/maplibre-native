@@ -20,7 +20,7 @@ public class HttpRequestUrl {
    * @return the adapted resource url
    */
   public static String buildResourceUrl(@NonNull String host, String resourceUrl, int querySize, boolean offline) {
-    if (isValidMapboxEndpoint(host)) {
+    if (isValidOutdooractiveEndpoint(host)) {
       if (querySize == 0) {
         resourceUrl = resourceUrl + "?";
       } else {
@@ -40,10 +40,10 @@ public class HttpRequestUrl {
    * @param host the host used as endpoint
    * @return true if a valid MapLibre endpoint
    */
-  private static boolean isValidMapboxEndpoint(String host) {
-    return host.equals("mapbox.com")
-      || host.endsWith(".mapbox.com")
-      || host.equals("mapbox.cn")
-      || host.endsWith(".mapbox.cn");
+  private static boolean isValidOutdooractiveEndpoint(String host) {
+    return host.equals("outdooractive.com")
+      || host.endsWith(".outdooractive.com")
+      || host.equals("oastatic.com")
+      || host.endsWith(".oastatic.com");
   }
 }
