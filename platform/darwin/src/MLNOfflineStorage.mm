@@ -424,6 +424,101 @@ const MLNExceptionName MLNUnsupportedRegionTypeException = @"MLNUnsupportedRegio
       });
 }
 
+- (void)addContentsOfTilepack:(NSURL *)fileURL
+                toOfflinePack:(MLNOfflinePack *)offlinePack
+        withCompletionHandler:(MLNBatchedOfflinePackAdditionCompletionHandler)completion {
+  MLNLogInfo(@"Adding addContentsOfTilepack: %@ completionHandler: %@", fileURL, completion);
+
+  if (!fileURL.isFileURL) {
+    [NSException raise:NSInvalidArgumentException
+                format:@"%@ must be a valid file path", fileURL.absoluteString];
+  }
+
+  __weak MLNOfflineStorage *weakSelf = self;
+  [self _addContentsOfTilepack:fileURL.path
+                 toOfflinePack:offlinePack
+         withCompletionHandler:^(NSArray<MLNOfflinePack *> *_Nullable packs, NSError *_Nullable error) {
+           if (packs) {
+             NSMutableDictionary *packsByIdentifier = [NSMutableDictionary dictionary];
+
+             MLNOfflineStorage *strongSelf = weakSelf;
+             for (MLNOfflinePack *pack in packs) {
+               [packsByIdentifier setObject:pack forKey:@(pack.mbglOfflineRegion->getID())];
+             }
+
+             id mutablePacks = [strongSelf mutableArrayValueForKey:@"packs"];
+             NSMutableIndexSet *replaceIndexSet = [NSMutableIndexSet indexSet];
+             NSMutableArray *replacePacksArray = [NSMutableArray array];
+             [strongSelf.packs
+                 enumerateObjectsUsingBlock:^(MLNOfflinePack *_Nonnull pack, NSUInteger idx,
+                                              BOOL *_Nonnull stop) {
+                   MLNOfflinePack *newPack = packsByIdentifier[@(pack.mbglOfflineRegion->getID())];
+                   if (newPack) {
+                     MLNOfflinePack *previousPack = [mutablePacks objectAtIndex:idx];
+                     [previousPack invalidate];
+                     [replaceIndexSet addIndex:idx];
+                     [replacePacksArray
+                         addObject:[packsByIdentifier
+                                       objectForKey:@(newPack.mbglOfflineRegion->getID())]];
+                     [packsByIdentifier
+                         removeObjectForKey:@(newPack.mbglOfflineRegion->getID())];
+                   }
+                 }];
+
+             if (replaceIndexSet.count > 0) {
+               [mutablePacks replaceObjectsAtIndexes:replaceIndexSet
+                                         withObjects:replacePacksArray];
+             }
+
+             [mutablePacks addObjectsFromArray:packsByIdentifier.allValues];
+           }
+           if (completion) {
+             completion(fileURL, packs, error);
+           }
+         }];
+}
+
+- (void)_addContentsOfTilepack:(NSString *)filePath
+                 toOfflinePack:(MLNOfflinePack *)offlinePack
+         withCompletionHandler:(void (^)(NSArray<MLNOfflinePack *> *_Nullable packs,
+                                         NSError *_Nullable error))completion {
+  _mbglDatabaseFileSource->mergeTilepack(
+      std::string(static_cast<const char *>([filePath UTF8String])),
+      offlinePack.mbglOfflineRegion->getID(),
+      [&, completion, filePath](mbgl::expected<mbgl::OfflineRegions, std::exception_ptr> result) {
+        NSError *error;
+        NSMutableArray *packs;
+        if (!result) {
+          NSString *description = [NSString
+              stringWithFormat:
+                  NSLocalizedStringWithDefaultValue(
+                      @"ADD_FILE_CONTENTS_FAILED_DESC", @"Foundation", nil,
+                      @"Unable to add offline packs from the file at %@.",
+                      @"User-friendly error description"),
+                  filePath];
+          error = [NSError errorWithDomain:MLNErrorDomain
+                                      code:MLNErrorCodeModifyingOfflineStorageFailed
+                                  userInfo:@{
+                                    NSLocalizedDescriptionKey : description,
+                                    NSLocalizedFailureReasonErrorKey :
+                                        @(mbgl::util::toString(result.error()).c_str())
+                                  }];
+        } else {
+          auto &regions = result.value();
+          packs = [NSMutableArray arrayWithCapacity:regions.size()];
+          for (auto &region : regions) {
+            MLNOfflinePack *pack = [[MLNOfflinePack alloc]
+                initWithMBGLRegion:new mbgl::OfflineRegion(std::move(region))];
+            [packs addObject:pack];
+          }
+        }
+        if (completion) {
+          dispatch_async(dispatch_get_main_queue(),
+                         [&, completion, error, packs](void) { completion(packs, error); });
+        }
+      });
+}
+
 // MARK: Pack management methods
 
 - (void)addPackForRegion:(id<MLNOfflineRegion>)region
@@ -588,11 +683,6 @@ const MLNExceptionName MLNUnsupportedRegionTypeException = @"MLNUnsupportedRegio
       });
 }
 
-- (void)setMaximumAllowedMapboxTiles:(uint64_t)maximumCount {
-  MLNLogDebug(@"Setting maximumAllowedMapboxTiles: %lu", (unsigned long)maximumCount);
-  _mbglDatabaseFileSource->setOfflineMapboxTileCountLimit(maximumCount);
-}
-
 // MARK: - Ambient cache management
 
 - (void)setMaximumAmbientCacheSize:(NSUInteger)cacheSize
@@ -672,6 +762,11 @@ const MLNExceptionName MLNUnsupportedRegionTypeException = @"MLNUnsupportedRegio
     }
   });
 }
+
+- (void)runPackDatabaseAutomatically:(BOOL)autopack {
+  _mbglDatabaseFileSource->runPackDatabaseAutomatically(autopack);
+}
+
 // MARK: -
 
 - (unsigned long long)countOfBytesCompleted {

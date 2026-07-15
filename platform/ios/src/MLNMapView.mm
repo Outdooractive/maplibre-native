@@ -408,8 +408,6 @@ public:
 @property (nonatomic) CGFloat scale;
 @property (nonatomic) CGFloat angle;
 @property (nonatomic) CGFloat quickZoomStart;
-/// Dormant means there is no underlying GL view (typically in the background)
-@property (nonatomic, getter=isDormant) BOOL dormant;
 @property (nonatomic, readonly, getter=isDisplayLinkActive) BOOL displayLinkActive;
 @property (nonatomic, readonly, getter=isRotationAllowed) BOOL rotationAllowed;
 @property (nonatomic) CGFloat rotationThresholdWhileZooming;
@@ -4514,6 +4512,15 @@ static void *windowScreenContext = &windowScreenContext;
       self.mbglMap.cameraForGeometry([shape geometryObject], padding, direction);
 
   return [self cameraForCameraOptions:cameraOptions];
+}
+
+- (MLNMapCamera *)cameraAtCoordinate:(CLLocationCoordinate2D)centerCoordinate
+                           zoomLevel:(double)zoomLevel {
+  CLLocationDistance altitude = MLNAltitudeForZoomLevel(zoomLevel, 0.0, centerCoordinate.latitude,
+                                                         self.frame.size);
+  return [MLNMapCamera cameraLookingAtCenterCoordinate:centerCoordinate acrossDistance:altitude
+                                                 pitch:0.0
+                                               heading:0.0];
 }
 
 - (MLNMapCamera *)cameraForCameraOptions:(const mbgl::CameraOptions &)cameraOptions {
