@@ -16,11 +16,7 @@ typedef NS_ENUM(NSUInteger, MLNWellKnownTileServer) {
   /**
    MapLibre
    */
-  MLNMapLibre,
-  /**
-   Mapbox
-   */
-  MLNMapbox
+  MLNMapLibre
 };
 
 /**
@@ -56,6 +52,11 @@ MLN_EXPORT
  Instructs the SDk to use the give tile server
  */
 + (void)useWellKnownTileServer:(MLNWellKnownTileServer)tileServer;
+
+/**
+ Use the WAL journal mode for new offline databases
+ */
++ (void)setUseWalJournal:(BOOL)useWalJournal;
 
 @end
 

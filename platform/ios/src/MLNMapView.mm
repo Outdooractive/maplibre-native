@@ -275,7 +275,7 @@ const NSTimeInterval MLNAnimationDuration = 0.3;
 
 /// Duration of an animation due to a user location update, typically chosen to
 /// match a typical interval between user location updates.
-const NSTimeInterval MLNUserLocationAnimationDuration = 1.0;
+const NSTimeInterval MLNUserLocationAnimationDuration = 0.3;
 
 /// Distance between the map view’s edge and that of the user location
 /// annotation view.
@@ -288,10 +288,12 @@ const CGFloat MLNMinimumZoom = 3;
 const double MLNMinimumZoomLevelForUserTracking = 10.5;
 
 /// Initial zoom level when entering user tracking mode from a low zoom level.
-const double MLNDefaultZoomLevelForUserTracking = 14.0;
+const double MLNDefaultZoomLevelForUserTracking = 15.0;
 
 /// Distance threshold to stop the camera while animating.
 const CLLocationDistance MLNDistanceThresholdForCameraPause = 500;
+
+const CLLocationDirection MLNToleranceForSnappingToNorth = 7;
 
 /// Rotation threshold while a pinch gesture is occurring.
 static NSString *const MLNRotationThresholdWhileZoomingKey = @"MLNRotationThresholdWhileZooming";
@@ -406,8 +408,6 @@ public:
 @property (nonatomic) CGFloat scale;
 @property (nonatomic) CGFloat angle;
 @property (nonatomic) CGFloat quickZoomStart;
-/// Dormant means there is no underlying GL view (typically in the background)
-@property (nonatomic, getter=isDormant) BOOL dormant;
 @property (nonatomic, readonly, getter=isDisplayLinkActive) BOOL displayLinkActive;
 @property (nonatomic, readonly, getter=isRotationAllowed) BOOL rotationAllowed;
 @property (nonatomic) CGFloat rotationThresholdWhileZooming;
@@ -4512,6 +4512,15 @@ static void *windowScreenContext = &windowScreenContext;
       self.mbglMap.cameraForGeometry([shape geometryObject], padding, direction);
 
   return [self cameraForCameraOptions:cameraOptions];
+}
+
+- (MLNMapCamera *)cameraAtCoordinate:(CLLocationCoordinate2D)centerCoordinate
+                           zoomLevel:(double)zoomLevel {
+  CLLocationDistance altitude = MLNAltitudeForZoomLevel(zoomLevel, 0.0, centerCoordinate.latitude,
+                                                         self.frame.size);
+  return [MLNMapCamera cameraLookingAtCenterCoordinate:centerCoordinate acrossDistance:altitude
+                                                 pitch:0.0
+                                               heading:0.0];
 }
 
 - (MLNMapCamera *)cameraForCameraOptions:(const mbgl::CameraOptions &)cameraOptions {

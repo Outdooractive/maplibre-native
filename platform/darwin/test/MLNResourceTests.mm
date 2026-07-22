@@ -4,7 +4,7 @@
 
 namespace mbgl {
 extern NSURL *resourceURL(const Resource &resource);
-extern BOOL isValidMapboxEndpoint(NSURL *url);
+extern BOOL isValidOutdooractiveEndpoint(NSURL *url);
 }  // namespace mbgl
 
 @interface MLNResourceTests : XCTestCase
@@ -15,15 +15,15 @@ extern BOOL isValidMapboxEndpoint(NSURL *url);
 - (void)testValidEndpoints {
   using namespace mbgl;
 
-  XCTAssertTrue(isValidMapboxEndpoint([NSURL URLWithString:@"https://mapbox.com"]));
-  XCTAssertTrue(isValidMapboxEndpoint([NSURL URLWithString:@"https://mapbox.cn"]));
-  XCTAssertTrue(isValidMapboxEndpoint([NSURL URLWithString:@"https://example.mapbox.com"]));
-  XCTAssertTrue(isValidMapboxEndpoint([NSURL URLWithString:@"https://example.mapbox.cn"]));
+  XCTAssertTrue(isValidOutdooractiveEndpoint([NSURL URLWithString:@"https://outdooractive.com"]));
+  XCTAssertTrue(isValidOutdooractiveEndpoint([NSURL URLWithString:@"https://oastatic.com"]));
+  XCTAssertTrue(isValidOutdooractiveEndpoint([NSURL URLWithString:@"https://example.outdooractive.com"]));
+  XCTAssertTrue(isValidOutdooractiveEndpoint([NSURL URLWithString:@"https://example.oastatic.com"]));
 
-  XCTAssertFalse(isValidMapboxEndpoint([NSURL URLWithString:@"https://example.com"]));
-  XCTAssertFalse(isValidMapboxEndpoint([NSURL URLWithString:@"https://example.cn"]));
-  XCTAssertFalse(isValidMapboxEndpoint([NSURL URLWithString:@"https://examplemapbox.com"]));
-  XCTAssertFalse(isValidMapboxEndpoint([NSURL URLWithString:@"https://examplemapbox.cn"]));
+  XCTAssertFalse(isValidOutdooractiveEndpoint([NSURL URLWithString:@"https://example.com"]));
+  XCTAssertFalse(isValidOutdooractiveEndpoint([NSURL URLWithString:@"https://example.cn"]));
+  XCTAssertFalse(isValidOutdooractiveEndpoint([NSURL URLWithString:@"https://exampleoutdooractive.com"]));
+  XCTAssertFalse(isValidOutdooractiveEndpoint([NSURL URLWithString:@"https://examplestatic.com"]));
 }
 
 - (void)internalTestOfflineQueryParameterIsAddedForOfflineResource:(std::string)testURL {

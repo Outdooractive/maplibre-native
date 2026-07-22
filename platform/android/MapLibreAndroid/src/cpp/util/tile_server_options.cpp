@@ -25,6 +25,7 @@ jni::Local<jni::Object<TileServerOptions>> TileServerOptions::New(jni::JNIEnv& e
                                                        jni::String,
                                                        jni::String,
                                                        jni::jboolean,
+                                                       jni::jboolean,
                                                        jni::String,
                                                        jni::Array<jni::Object<DefaultStyle>>>(env);
 
@@ -56,6 +57,7 @@ jni::Local<jni::Object<TileServerOptions>> TileServerOptions::New(jni::JNIEnv& e
         tileVersionPrefixValue ? jni::Make<jni::String>(env, *tileVersionPrefixValue) : jni::Local<jni::String>(),
         jni::Make<jni::String>(env, tileServerOptions.apiKeyParameterName()),
         jni::jboolean(tileServerOptions.requiresApiKey()),
+        jni::jboolean(tileServerOptions.useWalJournal()),
         jni::Make<jni::String>(env, tileServerOptions.defaultStyle()),
         TileServerOptions::NewStyles(env, tileServerOptions.defaultStyles()));
 }
@@ -74,12 +76,6 @@ jni::Local<jni::Array<jni::Object<DefaultStyle>>> TileServerOptions::NewStyles(
 jni::Local<jni::Object<TileServerOptions>> TileServerOptions::DefaultConfiguration(
     jni::JNIEnv& env, const jni::Class<TileServerOptions>& jOptions) {
     auto options = mbgl::TileServerOptions::DefaultConfiguration();
-    return TileServerOptions::New(env, options);
-}
-
-jni::Local<jni::Object<TileServerOptions>> TileServerOptions::MapboxConfiguration(
-    jni::JNIEnv& env, const jni::Class<TileServerOptions>& jOptions) {
-    auto options = mbgl::TileServerOptions::MapboxConfiguration();
     return TileServerOptions::New(env, options);
 }
 
@@ -127,6 +123,8 @@ mbgl::TileServerOptions TileServerOptions::getTileServerOptions(jni::JNIEnv& env
     static auto apiKeyParameterNameField = javaClass.GetField<jni::String>(env, "apiKeyParameterName");
     static auto apiKeyRequiredField = javaClass.GetField<jni::jboolean>(env, "apiKeyRequired");
 
+    static auto useWalJournalField = javaClass.GetField<jni::jboolean>(env, "useWalJournal");
+
     static auto defaultStyleField = javaClass.GetField<jni::String>(env, "defaultStyle");
 
     static auto defaultStylesField = javaClass.GetField<jni::Array<jni::Object<DefaultStyle>>>(env, "defaultStyles");
@@ -137,7 +135,8 @@ mbgl::TileServerOptions TileServerOptions::getTileServerOptions(jni::JNIEnv& env
                       .withBaseURL(jni::Make<std::string>(env, options.Get(env, baseURLField)))
                       .withUriSchemeAlias(jni::Make<std::string>(env, options.Get(env, uriSchemeAliasField)))
                       .withApiKeyParameterName(jni::Make<std::string>(env, options.Get(env, apiKeyParameterNameField)))
-                      .setRequiresApiKey(options.Get(env, apiKeyRequiredField));
+                      .setRequiresApiKey(options.Get(env, apiKeyRequiredField))
+                      .setUseWalJournal(options.Get(env, useWalJournalField));
 
     auto sourcePrefixValue = options.Get(env, sourceVersionPrefixField);
     retVal.withSourceTemplate(
@@ -194,8 +193,6 @@ void TileServerOptions::registerNative(jni::JNIEnv& env) {
                          *javaClass,
                          jni::MakeNativeMethod<decltype(&TileServerOptions::DefaultConfiguration),
                                                &TileServerOptions::DefaultConfiguration>("defaultConfiguration"),
-                         jni::MakeNativeMethod<decltype(&TileServerOptions::MapboxConfiguration),
-                                               &TileServerOptions::MapboxConfiguration>("mapboxConfiguration"),
                          jni::MakeNativeMethod<decltype(&TileServerOptions::MapTilerConfiguration),
                                                &TileServerOptions::MapTilerConfiguration>("mapTilerConfiguration"),
                          jni::MakeNativeMethod<decltype(&TileServerOptions::MapLibreConfiguration),
