@@ -78,12 +78,12 @@ extern BOOL isValidOutdooractiveEndpoint(NSURL *url);
 }
 
 - (void)testOfflineQueryParameterIsAddedForOfflineResource {
-  std::string testURL = "test://mapbox.com/testing_offline_query?a=one&b=two";
+  std::string testURL = "test://outdooractive.com/testing_offline_query?a=one&b=two";
   [self internalTestOfflineQueryParameterIsAddedForOfflineResource:testURL];
 }
 
-- (void)testOfflineQueryParameterIsAddedForOfflineResourceForChina {
-  std::string testURL = "test://mapbox.cn/testing_offline_query?a=one&b=two";
+- (void)testOfflineQueryParameterIsAddedForOfflineResourceForStaticHost {
+  std::string testURL = "test://oastatic.com/testing_offline_query?a=one&b=two";
   [self internalTestOfflineQueryParameterIsAddedForOfflineResource:testURL];
 }
 
