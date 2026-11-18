@@ -2,6 +2,7 @@
 #include <mln/storage/response.hpp>
 #include <mln/util/filesystem.hpp>
 #include <mln/util/io.hpp>
+#include <mln/util/logging.hpp>
 
 #include <system_error>
 
@@ -24,13 +25,16 @@ void requestLocalFile(const std::string& path,
     const bool isDirectory = std::filesystem::is_directory(status);
 
     if (notFound || isDirectory) {
+        Log::Info(Event::HttpRequest, "File resource is directory, url=" + path);
         response.error = std::make_unique<Response::Error>(Response::Error::Reason::NotFound);
     } else {
         auto data = util::readFile(path, dataRange);
         if (!data) {
+            Log::Info(Event::HttpRequest, "Cannot read file resource, url=" + path);
             response.error = std::make_unique<Response::Error>(Response::Error::Reason::Other,
                                                                std::string("Cannot read file ") + path);
         } else {
+            Log::Info(Event::HttpRequest, "File resource loaded, url=" + path);
             response.data = std::make_shared<std::string>(std::move(*data));
         }
     }

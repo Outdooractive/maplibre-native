@@ -46,6 +46,9 @@ import androidx.annotation.Nullable;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
+import org.maplibre.android.log.Logger;
+import org.maplibre.geojson.Feature;
+import org.maplibre.geojson.Point;
 
 import org.maplibre.android.geometry.LatLng;
 import org.maplibre.android.location.modes.RenderMode;
@@ -60,6 +63,9 @@ import org.maplibre.geojson.Point;
 import java.util.Set;
 
 final class SymbolLocationLayerRenderer implements LocationLayerRenderer {
+
+  private static final String TAG = "mlgl-locationSymbol";
+
   private Style style;
   private final LayerSourceProvider layerSourceProvider;
 
@@ -193,6 +199,11 @@ final class SymbolLocationLayerRenderer implements LocationLayerRenderer {
 
   @Override
   public void styleScaling(Expression scaleExpression) {
+    if (!style.isFullyLoaded()) {
+      Logger.w(TAG, "Style is not fully loaded, not able to get layer!");
+      return;
+    }
+
     for (String layerId : layerSet) {
       Layer layer = style.getLayer(layerId);
       if (layer instanceof SymbolLayer) {
@@ -257,6 +268,7 @@ final class SymbolLocationLayerRenderer implements LocationLayerRenderer {
 
   private void setLayerVisibility(@NonNull String layerId, boolean visible) {
     if (!style.isFullyLoaded()) {
+      Logger.w(TAG, "Style is not fully loaded, not able to get layer!");
       return;
     }
 
@@ -282,6 +294,11 @@ final class SymbolLocationLayerRenderer implements LocationLayerRenderer {
    */
   @Override
   public void stylePulsingCircle(LocationComponentOptions options) {
+    if (!style.isFullyLoaded()) {
+      Logger.w(TAG, "Style is not fully loaded, not able to get layer!");
+      return;
+    }
+
     if (style.getLayer(PULSING_CIRCLE_LAYER) != null) {
       setLayerVisibility(PULSING_CIRCLE_LAYER, true);
       style
@@ -335,8 +352,10 @@ final class SymbolLocationLayerRenderer implements LocationLayerRenderer {
     // prevents exception when other style has been set with an update in flight
     // https://github.com/maplibre/maplibre-native/issues/3348
     if (!style.isFullyLoaded()) {
+      Logger.w(TAG, "Style is not fully loaded, not able to get source!");
       return;
     }
+
     GeoJsonSource source = style.getSourceAs(LOCATION_SOURCE);
     if (source != null) {
       locationSource.setGeoJson(locationFeature);

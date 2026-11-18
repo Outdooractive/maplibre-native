@@ -14,8 +14,6 @@ public:
     void SetUp(const ::benchmark::State&) override {
         using namespace std::chrono_literals;
 
-        db.setOfflineMapboxTileCountLimit(100000);
-
         response.data = std::make_shared<std::string>(50 * 1024, 0);
         response.mustRevalidate = false;
         response.expires = mln::util::now() + 1h;

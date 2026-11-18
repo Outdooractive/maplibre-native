@@ -251,6 +251,13 @@ public:
      * @return const bool true if API key is required
      */
     bool requiresApiKey() const;
+
+    /**
+     * @brief Initialize the offline db with journal_mode = WAL or not
+     */
+    TileServerOptions& setUseWalJournal(bool useWalJournal);
+    bool useWalJournal() const;
+
     /**
      * @brief Gets the default styles.
      */
@@ -287,11 +294,6 @@ public:
      * @brief Get the tile server options configured for MapLibre.
      */
     static TileServerOptions MapLibreConfiguration();
-
-    /**
-     * @brief Get the tile server options configured for Mapbox.
-     */
-    static TileServerOptions MapboxConfiguration();
 
     /**
      * @brief Get the tile server options configured for MapTiler.

@@ -262,11 +262,6 @@ class OfflineActivity : AppCompatActivity(), DownloadRegionDialogListener {
                 Timber.e("onError: %s, %s", error.reason, error.message)
                 offlineRegion!!.setDownloadState(OfflineRegion.STATE_INACTIVE)
             }
-
-            override fun mapboxTileCountLimitExceeded(limit: Long) {
-                Timber.e("MapLibre tile count limit exceeded: %s", limit)
-                offlineRegion!!.setDownloadState(OfflineRegion.STATE_INACTIVE)
-            }
         })
 
         // Change the region state

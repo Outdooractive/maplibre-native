@@ -80,19 +80,6 @@ class OfflineRegion @Keep private constructor(offlineRegionPtr: Long, fileSource
          * @param error the offline region error message
          */
         fun onError(error: OfflineRegionError)
-
-        /*
-     * Implement this method to be notified when the limit on the number of MapLibre
-     * tiles stored for offline regions has been reached.
-     *
-     * Once the limit has been reached, the SDK will not download further offline
-     * tiles from MapLibre APIs until existing tiles have been removed.
-     *
-     * This limit does not apply to non-MapLibre tile sources.
-     *
-     * This method will be executed on the main thread.
-     */
-        fun mapboxTileCountLimitExceeded(limit: Long)
     }
 
     /**
@@ -253,12 +240,6 @@ class OfflineRegion @Keep private constructor(offlineRegionPtr: Long, fileSource
             override fun onError(error: OfflineRegionError) {
                 if (deliverMessages()) {
                     handler.post { observer?.onError(error) }
-                }
-            }
-
-            override fun mapboxTileCountLimitExceeded(limit: Long) {
-                if (deliverMessages()) {
-                    handler.post { observer?.mapboxTileCountLimitExceeded(limit) }
                 }
             }
         })

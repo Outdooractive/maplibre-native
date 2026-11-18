@@ -275,7 +275,7 @@ const NSTimeInterval MLNAnimationDuration = 0.3;
 
 /// Duration of an animation due to a user location update, typically chosen to
 /// match a typical interval between user location updates.
-const NSTimeInterval MLNUserLocationAnimationDuration = 1.0;
+const NSTimeInterval MLNUserLocationAnimationDuration = 0.3;
 
 /// Distance between the map view’s edge and that of the user location
 /// annotation view.
@@ -288,10 +288,12 @@ const CGFloat MLNMinimumZoom = 3;
 const double MLNMinimumZoomLevelForUserTracking = 10.5;
 
 /// Initial zoom level when entering user tracking mode from a low zoom level.
-const double MLNDefaultZoomLevelForUserTracking = 14.0;
+const double MLNDefaultZoomLevelForUserTracking = 15.0;
 
 /// Distance threshold to stop the camera while animating.
 const CLLocationDistance MLNDistanceThresholdForCameraPause = 500;
+
+const CLLocationDirection MLNToleranceForSnappingToNorth = 7;
 
 /// Rotation threshold while a pinch gesture is occurring.
 static NSString *const MLNRotationThresholdWhileZoomingKey = @"MLNRotationThresholdWhileZooming";
@@ -406,8 +408,6 @@ public:
 @property (nonatomic) CGFloat scale;
 @property (nonatomic) CGFloat angle;
 @property (nonatomic) CGFloat quickZoomStart;
-/// Dormant means there is no underlying GL view (typically in the background)
-@property (nonatomic, getter=isDormant) BOOL dormant;
 @property (nonatomic, readonly, getter=isDisplayLinkActive) BOOL displayLinkActive;
 @property (nonatomic, readonly, getter=isRotationAllowed) BOOL rotationAllowed;
 @property (nonatomic) CGFloat rotationThresholdWhileZooming;
@@ -515,6 +515,11 @@ public:
   BOOL _createdFromIB;
   BOOL _fastPFOREnabled;
   BOOL _featureInfoEnabled;
+
+  /// Window whose "screen"/"windowScene" key path this view is currently observing, if any.
+  /// Tracked explicitly so add/remove stay balanced even when `didMoveToWindow:` fires without a
+  /// matching `willMoveToWindow:` (which would otherwise raise NSRangeException on removal).
+  __weak UIWindow *_observedWindow;
 }
 
 // MARK: - Setup & Teardown -
@@ -1067,6 +1072,8 @@ public:
 
   [[UIDevice currentDevice] endGeneratingDeviceOrientationNotifications];
   [[NSNotificationCenter defaultCenter] removeObserver:self];
+
+  [self removeWindowScreenObserver];
 
   // Removing the annotations unregisters any outstanding KVO observers.
   NSArray *annotations = self.annotations;
@@ -1749,6 +1756,44 @@ public:
   }
 }
 
+- (NSString *)windowScreenObserverKeyPath {
+#ifdef SUPPORT_UIWINDOWSCENE
+  if (@available(iOS 13.0, *)) {
+    return @"windowScene";
+  }
+#endif
+  return @"screen";
+}
+
+- (void)addWindowScreenObserver {
+  UIWindow *window = self.window;
+  if (!window || _observedWindow == window) {
+    return;
+  }
+
+  // A `didMoveToWindow:` without a matching `willMoveToWindow:` (for example when a
+  // superview is re-parented) can leave a stale registration behind.
+  [self removeWindowScreenObserver];
+
+  [window addObserver:self
+            forKeyPath:self.windowScreenObserverKeyPath
+               options:NSKeyValueObservingOptionNew | NSKeyValueObservingOptionOld
+               context:windowScreenContext];
+  _observedWindow = window;
+}
+
+- (void)removeWindowScreenObserver {
+  UIWindow *window = _observedWindow;
+  if (!window) {
+    return;
+  }
+
+  _observedWindow = nil;
+  [window removeObserver:self
+              forKeyPath:self.windowScreenObserverKeyPath
+                 context:windowScreenContext];
+}
+
 - (void)willMoveToWindow:(UIWindow *)newWindow {
   [super willMoveToWindow:newWindow];
   [self refreshSupportedInterfaceOrientationsWithWindow:newWindow];
@@ -1765,13 +1810,8 @@ public:
   // removed from the hierarchy
   [self destroyDisplayLink];
 
-  if (self.window) {
-#ifdef SUPPORT_UIWINDOWSCENE
-    [self.window removeObserver:self forKeyPath:@"windowScene" context:windowScreenContext];
-#else
-    [self.window removeObserver:self forKeyPath:@"screen" context:windowScreenContext];
-#endif
-  }
+  // `self.window` is still the window we are leaving at this point.
+  [self removeWindowScreenObserver];
 }
 
 - (void)didMoveToWindow {
@@ -1783,17 +1823,7 @@ public:
     [self resumeRenderingIfNecessary];
     [self updatePresentsWithTransaction];
 
-#ifdef SUPPORT_UIWINDOWSCENE
-    [self.window addObserver:self
-                  forKeyPath:@"windowScene"
-                     options:NSKeyValueObservingOptionNew | NSKeyValueObservingOptionOld
-                     context:windowScreenContext];
-#else
-    [self.window addObserver:self
-                  forKeyPath:@"screen"
-                     options:NSKeyValueObservingOptionNew | NSKeyValueObservingOptionOld
-                     context:windowScreenContext];
-#endif
+    [self addWindowScreenObserver];
 
     // https://github.com/maplibre/maplibre-native/issues/4204
     [self setNeedsLayout];
@@ -4522,6 +4552,15 @@ static void *windowScreenContext = &windowScreenContext;
       self.mbglMap.cameraForGeometry([shape geometryObject], padding, direction);
 
   return [self cameraForCameraOptions:cameraOptions];
+}
+
+- (MLNMapCamera *)cameraAtCoordinate:(CLLocationCoordinate2D)centerCoordinate
+                           zoomLevel:(double)zoomLevel {
+  CLLocationDistance altitude = MLNAltitudeForZoomLevel(zoomLevel, 0.0, centerCoordinate.latitude,
+                                                         self.frame.size);
+  return [MLNMapCamera cameraLookingAtCenterCoordinate:centerCoordinate acrossDistance:altitude
+                                                 pitch:0.0
+                                               heading:0.0];
 }
 
 - (MLNMapCamera *)cameraForCameraOptions:(const mln::CameraOptions &)cameraOptions {

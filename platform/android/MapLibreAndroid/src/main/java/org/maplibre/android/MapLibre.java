@@ -8,6 +8,7 @@ import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.UiThread;
+import org.maplibre.android.util.TileServerOptionsConfigurator;
 import timber.log.Timber;
 
 import org.maplibre.android.constants.MapLibreConstants;
@@ -57,6 +58,24 @@ public final class MapLibre {
   }
 
   /**
+   * Get an instance of MapLibre, allowing the tile server options to be customized.
+   * <p>
+   * This class manages the API key, application context, and connectivity state.
+   * </p>
+   *
+   * @param context Android context which holds or is an application context
+   * @param tileServerOptionsConfigurator callback used to adjust the predefined tile server
+   *                                      configuration before it is installed, or null
+   * @return the single instance of MapLibre
+   */
+  @UiThread
+  @NonNull
+  public static synchronized MapLibre getInstance(@NonNull Context context,
+                                                  @Nullable TileServerOptionsConfigurator tileServerOptionsConfigurator) {
+    return getInstance(context, null, WellKnownTileServer.MapLibre, null, tileServerOptionsConfigurator);
+  }
+
+  /**
    * Get an instance of MapLibre.
    * <p>
    * This class manages the API key, application context, and connectivity state.
@@ -74,7 +93,31 @@ public final class MapLibre {
   @NonNull
   public static synchronized MapLibre getInstance(@NonNull Context context, @Nullable String apiKey,
                                                   @NonNull WellKnownTileServer tileServer) {
-    return getInstance(context, apiKey, tileServer, null);
+    return getInstance(context, apiKey, tileServer, (RenderingEngine.Type) null, null);
+  }
+
+  /**
+   * Get an instance of MapLibre, allowing the tile server options to be customized.
+   * <p>
+   * This class manages the API key, application context, and connectivity state.
+   * </p>
+   *
+   * @param context Android context which holds or is an application context
+   * @param apiKey api key
+   * @param tileServer the tile server whose predefined configuration will be used to
+   *                   bootstrap the SDK. The predefined configuration includes
+   *                   rules for converting resource URLs between normal and canonical forms
+   *                   and set of predefined styles available on the server.
+   * @param tileServerOptionsConfigurator callback used to adjust the predefined tile server
+   *                                      configuration before it is installed, or null
+   * @return the single instance of MapLibre
+   */
+  @UiThread
+  @NonNull
+  public static synchronized MapLibre getInstance(@NonNull Context context, @Nullable String apiKey,
+                                                  @NonNull WellKnownTileServer tileServer,
+                                                  @Nullable TileServerOptionsConfigurator tileServerOptionsConfigurator) {
+    return getInstance(context, apiKey, tileServer, null, tileServerOptionsConfigurator);
   }
 
   /**
@@ -100,6 +143,29 @@ public final class MapLibre {
   public static synchronized MapLibre getInstance(@NonNull Context context, @Nullable String apiKey,
                                                   @NonNull WellKnownTileServer tileServer,
                                                   @Nullable RenderingEngine.Type type) {
+    return getInstance(context, apiKey, tileServer, type, null);
+  }
+
+  /**
+   * Get an instance of MapLibre, explicitly picking the rendering engine to use and allowing
+   * the tile server options to be customized.
+   *
+   * @param context Android context which holds or is an application context
+   * @param apiKey api key
+   * @param tileServer the tile server whose predefined configuration will be used to
+   *                   bootstrap the SDK
+   * @param type the rendering engine to use; ignored if MapLibre has already been
+   *             initialized in this process. If null, the default rendering engine will be used.
+   * @param tileServerOptionsConfigurator callback used to adjust the predefined tile server
+   *                                      configuration before it is installed, or null
+   * @return the single instance of MapLibre
+   */
+  @UiThread
+  @NonNull
+  public static synchronized MapLibre getInstance(@NonNull Context context, @Nullable String apiKey,
+                                                  @NonNull WellKnownTileServer tileServer,
+                                                  @Nullable RenderingEngine.Type type,
+                                                  @Nullable TileServerOptionsConfigurator tileServerOptionsConfigurator) {
     ThreadUtils.init(context);
     ThreadUtils.checkThread(TAG);
     if (INSTANCE == null) {
@@ -117,6 +183,9 @@ public final class MapLibre {
     }
 
     TileServerOptions tileServerOptions = TileServerOptions.get(tileServer);
+    if (tileServerOptionsConfigurator != null) {
+      tileServerOptions = tileServerOptionsConfigurator.configure(tileServerOptions);
+    }
     INSTANCE.tileServerOptions = tileServerOptions;
     FileSource fileSource = FileSource.getInstance(context);
     fileSource.setTileServerOptions(tileServerOptions);

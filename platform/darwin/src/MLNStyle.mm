@@ -132,7 +132,7 @@ const MLNExceptionName MLNRedundantSourceIdentifierException =
     _rawStyle = rawStyle;
     _customLayers = [NSMutableDictionary dictionary];
     _localizedLayersByIdentifier = [NSMutableDictionary dictionary];
-    MLNLogDebug(@"Initializing with style name: %@ stylable: %@", self.name, stylable);
+    MLNLogInfo(@"Initializing with style name: %@ stylable: %@", self.name, stylable);
   }
   return self;
 }
@@ -169,7 +169,7 @@ const MLNExceptionName MLNRedundantSourceIdentifierException =
 }
 
 - (void)setSources:(NSSet<__kindof MLNSource *> *)sources {
-  MLNLogDebug(@"Setting: %lu sources", sources.count);
+  MLNLogInfo(@"Setting: %lu sources", sources.count);
   for (MLNSource *source in self.sources) {
     [self removeSource:source];
   }
@@ -187,7 +187,7 @@ const MLNExceptionName MLNRedundantSourceIdentifierException =
 }
 
 - (MLNSource *)sourceWithIdentifier:(NSString *)identifier {
-  MLNLogDebug(@"Querying source with identifier: %@", identifier);
+  MLNLogInfo(@"Querying source with identifier: %@", identifier);
   auto rawSource = self.rawStyle->getSource(identifier.UTF8String);
 
   return rawSource ? [self sourceFromMBGLSource:rawSource] : nil;
@@ -217,7 +217,7 @@ const MLNExceptionName MLNRedundantSourceIdentifierException =
 }
 
 - (void)addSource:(MLNSource *)source {
-  MLNLogDebug(@"Adding source: %@", source);
+  MLNLogInfo(@"Adding source: %@", source);
   if (!source.rawSource) {
     [NSException
          raise:NSInvalidArgumentException
@@ -238,7 +238,7 @@ const MLNExceptionName MLNRedundantSourceIdentifierException =
 }
 
 - (BOOL)removeSource:(MLNSource *)source error:(NSError *__nullable *__nullable)outError {
-  MLNLogDebug(@"Removing source: %@", source);
+  MLNLogInfo(@"Removing source: %@", source);
 
   if (!source.rawSource) {
     NSString *errorMessage = [NSString
@@ -295,7 +295,7 @@ const MLNExceptionName MLNRedundantSourceIdentifierException =
 }
 
 - (void)setLayers:(NSArray<__kindof MLNStyleLayer *> *)layers {
-  MLNLogDebug(@"Setting: %lu layers", layers.count);
+  MLNLogInfo(@"Setting: %lu layers", layers.count);
   for (MLNStyleLayer *layer in self.layers) {
     [self removeLayer:layer];
   }
@@ -386,13 +386,13 @@ const MLNExceptionName MLNRedundantSourceIdentifierException =
 }
 
 - (MLNStyleLayer *)layerWithIdentifier:(NSString *)identifier {
-  MLNLogDebug(@"Querying layerWithIdentifier: %@", identifier);
+  MLNLogInfo(@"Querying layerWithIdentifier: %@", identifier);
   auto mbglLayer = self.rawStyle->getLayer(identifier.UTF8String);
   return mbglLayer ? [self layerFromMBGLLayer:mbglLayer] : nil;
 }
 
 - (void)removeLayer:(MLNStyleLayer *)layer {
-  MLNLogDebug(@"Removing layer: %@", layer);
+  MLNLogInfo(@"Removing layer: %@", layer);
   if (!layer.rawLayer) {
     [NSException raise:NSInvalidArgumentException
                 format:@"The style layer %@ cannot be removed from the style. "
@@ -406,7 +406,7 @@ const MLNExceptionName MLNRedundantSourceIdentifierException =
 }
 
 - (void)addLayer:(MLNStyleLayer *)layer {
-  MLNLogDebug(@"Adding layer: %@", layer);
+  MLNLogInfo(@"Adding layer: %@", layer);
   if (!layer.rawLayer) {
     [NSException raise:NSInvalidArgumentException
                 format:@"The style layer %@ cannot be added to the style. "
@@ -428,7 +428,7 @@ const MLNExceptionName MLNRedundantSourceIdentifierException =
 }
 
 - (void)insertLayer:(MLNStyleLayer *)layer belowLayer:(MLNStyleLayer *)sibling {
-  MLNLogDebug(@"Inseting layer: %@ belowLayer: %@", layer, sibling);
+  MLNLogInfo(@"Inseting layer: %@ belowLayer: %@", layer, sibling);
   if (!layer.rawLayer) {
     [NSException raise:NSInvalidArgumentException
                 format:@"The style layer %@ cannot be added to the style. "
@@ -452,7 +452,7 @@ const MLNExceptionName MLNRedundantSourceIdentifierException =
 }
 
 - (void)insertLayer:(MLNStyleLayer *)layer aboveLayer:(MLNStyleLayer *)sibling {
-  MLNLogDebug(@"Inseting layer: %@ aboveLayer: %@", layer, sibling);
+  MLNLogInfo(@"Inseting layer: %@ aboveLayer: %@", layer, sibling);
   if (!layer.rawLayer) {
     [NSException raise:NSInvalidArgumentException
                 format:@"The style layer %@ cannot be added to the style. "
@@ -503,7 +503,7 @@ const MLNExceptionName MLNRedundantSourceIdentifierException =
 // MARK: Style images
 
 - (void)setImage:(MLNImage *)image forName:(NSString *)name {
-  MLNLogDebug(@"Setting image: %@ forName: %@", image, name);
+  MLNLogInfo(@"Setting image: %@ forName: %@", image, name);
   if (!image) {
     [NSException raise:NSInvalidArgumentException format:@"Cannot assign nil image to “%@”.", name];
   }
@@ -516,7 +516,7 @@ const MLNExceptionName MLNRedundantSourceIdentifierException =
 }
 
 - (void)removeImageForName:(NSString *)name {
-  MLNLogDebug(@"Removing imageForName: %@", name);
+  MLNLogInfo(@"Removing imageForName: %@", name);
   if (!name) {
     [NSException raise:NSInvalidArgumentException format:@"Cannot remove image with nil name."];
   }
@@ -525,7 +525,7 @@ const MLNExceptionName MLNRedundantSourceIdentifierException =
 }
 
 - (MLNImage *)imageForName:(NSString *)name {
-  MLNLogDebug(@"Querying imageForName: %@", name);
+  MLNLogInfo(@"Querying imageForName: %@", name);
   if (!name) {
     [NSException raise:NSInvalidArgumentException format:@"Cannot get image with nil name."];
   }
