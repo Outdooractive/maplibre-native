@@ -510,6 +510,11 @@ public:
   CFTimeInterval _frameDurations;
 
   MLNRenderingStats *_renderingStats;
+
+  /// Window whose "screen"/"windowScene" key path this view is currently observing, if any.
+  /// Tracked explicitly so add/remove stay balanced even when `didMoveToWindow:` fires without a
+  /// matching `willMoveToWindow:` (which would otherwise raise NSRangeException on removal).
+  __weak UIWindow *_observedWindow;
 }
 
 // MARK: - Setup & Teardown -
@@ -1036,6 +1041,8 @@ public:
 
   [[UIDevice currentDevice] endGeneratingDeviceOrientationNotifications];
   [[NSNotificationCenter defaultCenter] removeObserver:self];
+
+  [self removeWindowScreenObserver];
 
   // Removing the annotations unregisters any outstanding KVO observers.
   NSArray *annotations = self.annotations;
@@ -1731,6 +1738,44 @@ public:
   }
 }
 
+- (NSString *)windowScreenObserverKeyPath {
+#ifdef SUPPORT_UIWINDOWSCENE
+  if (@available(iOS 13.0, *)) {
+    return @"windowScene";
+  }
+#endif
+  return @"screen";
+}
+
+- (void)addWindowScreenObserver {
+  UIWindow *window = self.window;
+  if (!window || _observedWindow == window) {
+    return;
+  }
+
+  // A `didMoveToWindow:` without a matching `willMoveToWindow:` (for example when a
+  // superview is re-parented) can leave a stale registration behind.
+  [self removeWindowScreenObserver];
+
+  [window addObserver:self
+            forKeyPath:self.windowScreenObserverKeyPath
+               options:NSKeyValueObservingOptionNew | NSKeyValueObservingOptionOld
+               context:windowScreenContext];
+  _observedWindow = window;
+}
+
+- (void)removeWindowScreenObserver {
+  UIWindow *window = _observedWindow;
+  if (!window) {
+    return;
+  }
+
+  _observedWindow = nil;
+  [window removeObserver:self
+              forKeyPath:self.windowScreenObserverKeyPath
+                 context:windowScreenContext];
+}
+
 - (void)willMoveToWindow:(UIWindow *)newWindow {
   [super willMoveToWindow:newWindow];
   [self refreshSupportedInterfaceOrientationsWithWindow:newWindow];
@@ -1747,16 +1792,8 @@ public:
   // removed from the hierarchy
   [self destroyDisplayLink];
 
-  if (self.window) {
-#ifdef SUPPORT_UIWINDOWSCENE
-    if (@available(iOS 13.0, *)) {
-      [self.window removeObserver:self forKeyPath:@"windowScene" context:windowScreenContext];
-    } else
-#endif
-    {
-      [self.window removeObserver:self forKeyPath:@"screen" context:windowScreenContext];
-    }
-  }
+  // `self.window` is still the window we are leaving at this point.
+  [self removeWindowScreenObserver];
 }
 
 - (void)didMoveToWindow {
@@ -1768,20 +1805,7 @@ public:
     [self resumeRenderingIfNecessary];
     [self updatePresentsWithTransaction];
 
-#ifdef SUPPORT_UIWINDOWSCENE
-    if (@available(iOS 13.0, *)) {
-      [self.window addObserver:self
-                    forKeyPath:@"windowScene"
-                       options:NSKeyValueObservingOptionNew | NSKeyValueObservingOptionOld
-                       context:windowScreenContext];
-    } else
-#endif
-    {
-      [self.window addObserver:self
-                    forKeyPath:@"screen"
-                       options:NSKeyValueObservingOptionNew | NSKeyValueObservingOptionOld
-                       context:windowScreenContext];
-    }
+    [self addWindowScreenObserver];
 
     // https://github.com/maplibre/maplibre-native/issues/4204
     [self setNeedsLayout];
