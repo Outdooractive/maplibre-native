@@ -270,7 +270,6 @@ NSString * const MLNLastMapDebugMaskDefaultsKey = @"MLNLastMapDebugMask";
 - (void)watchOfflinePack:(MLNOfflinePack *)pack {
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(offlinePackDidChangeProgress:) name:MLNOfflinePackProgressChangedNotification object:nil];
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(offlinePackDidReceiveError:) name:MLNOfflinePackErrorNotification object:nil];
-    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(offlinePackDidReceiveError:) name:MLNOfflinePackMaximumMapboxTilesReachedNotification object:nil];
 }
 
 - (void)unwatchOfflinePack:(MLNOfflinePack *)pack {

@@ -243,10 +243,6 @@ int main(int argc, char* argv[]) {
             std::cerr << error.reason << " downloading resource: " << error.message << std::endl;
         }
 
-        void mapboxTileCountLimitExceeded(uint64_t limit) override {
-            std::cerr << "Error: reached limit of " << limit << " offline tiles" << std::endl;
-        }
-
         OfflineRegion& region;
         std::shared_ptr<DatabaseFileSource> fileSource;
         util::RunLoop& loop;
