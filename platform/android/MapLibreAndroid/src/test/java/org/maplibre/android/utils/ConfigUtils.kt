@@ -38,6 +38,7 @@ class ConfigUtils {
                 null,
                 "key",
                 true,
+                false,
                 defaultStyle,
                 defaultStyles
             )
